@@ -35,6 +35,7 @@ class Game:
         self.all_sprites = pg.sprite.Group()
         self.all_walls = pg.sprite.Group()
         self.all_mobs = pg.sprite.Group()
+        self.all_projectiles = pg.sprite.Group()
         # self.player = Player(self, 15, 15)
         # self.mob = Mob(self, 4, 4) 
         # self.wall = Wall(self, WIDTH/2/TILESIZE, HEIGHT/2/TILESIZE)
@@ -77,10 +78,12 @@ class Game:
 
     def update(self):
         self.all_sprites.update()
+        print(len(self.all_projectiles))
+        
 
     
     def draw(self):
-        self.screen.fill(BLUE)
+        self.screen.fill(GRAY)
         self.draw_text("Hello World", 24, WHITE, WIDTH/2, TILESIZE)
         self.draw_text(str(self.dt), 24, WHITE, WIDTH/2, HEIGHT/4)
         # self.draw_text(str(self.game_cooldown.time), 24, WHITE, WIDTH/2, HEIGHT/.5)

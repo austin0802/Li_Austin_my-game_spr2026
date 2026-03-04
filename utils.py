@@ -41,9 +41,9 @@ class Cooldown:
 class Spritesheet:
     def __init__(self,filename):
         self.spritesheet = pg.image.load(filename).convert()
-    def get_iamge(self,x,y,width,height):
+    def get_image(self,x,y,width,height):
         image = pg.Surface((width,height))
         image.blit(self.spritesheet,(0,0),(x,y,width,height))
-        new_iamge = pg.transform.scale(image, (width,height))
-        image = new_iamge
+        new_image = pg.transform.scale(image, (width,height))
+        image = new_image
         return image
