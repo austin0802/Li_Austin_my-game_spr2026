@@ -6,30 +6,33 @@ from sprites import *
 from utils import *
 vec = pg.math.Vector2
 
-# import pygame and others 
+# import settings
 
 
-#instantiates the Game class and the method inside it
+# the game class that will be instantiated in order to run the game...
 class Game:
     def __init__(self):
         pg.init()
         # setting up pygame screen using tuple value for width height
         self.screen = pg.display.set_mode((WIDTH, HEIGHT))
         pg.display.set_caption(TITLE)
+
         self.clock = pg.time.Clock()
         self.running = True
         self.playing = True
         self.game_cooldown = Cooldown(5000)
-   
+        print('game instantiated...')
         
-
+    
+    # a method is a function tied to a Class
+    #loads the data (images)
     def load_data(self):
         self.game_dir = path.dirname(__file__)
-        self.image_dir=path.join(self.game_dir, 'images')
-        self.wall_img=pg.image.load(path.join(self.image_dir,"img1_art.png"))
+        self.img_dir = path.join(self.game_dir, 'images')
+        self.wall_img = pg.image.load(path.join(self.img_dir, 'img1_art.png')).convert_alpha()
         self.map = Map(path.join(self.game_dir, 'level1.txt'))
         print('data is loaded')
-
+    #adds all the sprites 
     def new(self):
         self.load_data()
         self.all_sprites = pg.sprite.Group()
@@ -46,15 +49,19 @@ class Game:
                     Wall(self, col, row)
                 if tile == 'P':
                     self.player = Player(self, col, row)
+                if tile == 'M':
+                    Mob(self, col, row)
+                if tile == 'C':
+                    Coin(self, col, row)
         self.run()
-
+    #defines how to run
     def run(self):
         while self.running:
             self.dt = self.clock.tick(FPS) / 1000
             self.events()
             self.update()
             self.draw()
-
+    #adds the evets)
     def events(self):
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -75,15 +82,14 @@ class Game:
 
     def quit(self):
         pass
-
+    #not done with how to update
     def update(self):
         self.all_sprites.update()
-        print(len(self.all_projectiles))
-        
+        # print(len(self.all_projectiles))
 
-    
+    #draws map and sprites
     def draw(self):
-        self.screen.fill(GRAY)
+        self.screen.fill(BLUE)
         self.draw_text("Hello World", 24, WHITE, WIDTH/2, TILESIZE)
         self.draw_text(str(self.dt), 24, WHITE, WIDTH/2, HEIGHT/4)
         # self.draw_text(str(self.game_cooldown.time), 24, WHITE, WIDTH/2, HEIGHT/.5)
@@ -91,7 +97,7 @@ class Game:
         self.draw_text(str(self.player.pos), 24, WHITE, WIDTH/2, HEIGHT-TILESIZE*3)
         self.all_sprites.draw(self.screen)
         pg.display.flip()
-
+    #draws the text
     def draw_text(self, text, size, color, x, y):
         font_name = pg.font.match_font('arial')
         font = pg.font.Font(font_name, size)
@@ -99,17 +105,20 @@ class Game:
         text_rect = text_surface.get_rect()
         text_rect.midtop = (x,y)
         self.screen.blit(text_surface, text_rect)
-
+#calls Game
 if __name__ == "__main__":
     g = Game()
-
+#runs game
 while g.running:
     g.new()
 
-
+#closes game
 pg.quit()
 
 
+    
+
+    
     
 
     

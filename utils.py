@@ -37,7 +37,7 @@ class Cooldown:
         if current_time - self.start_time >= self.time:
             return True
         return False
- 
+#adds a spritesheet class to load the spritesheet
 class Spritesheet:
     def __init__(self,filename):
         self.spritesheet = pg.image.load(filename).convert()
