@@ -29,7 +29,7 @@ class Game:
     def load_data(self):
         self.game_dir = path.dirname(__file__)
         self.img_dir = path.join(self.game_dir, 'images')
-        self.wall_img = pg.image.load(path.join(self.img_dir, 'img1_art.png')).convert_alpha()
+        self.wall_img = pg.image.load(path.join(self.img_dir, 'wall_art.png')).convert_alpha()
         self.map = Map(path.join(self.game_dir, 'level1.txt'))
         print('data is loaded')
     #adds all the sprites 
@@ -115,10 +115,5 @@ while g.running:
 #closes game
 pg.quit()
 
-
-    
-
-    
-    
 
     
