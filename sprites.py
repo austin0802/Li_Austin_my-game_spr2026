@@ -10,6 +10,7 @@ def collide_hit_rect(one, two):
 
 # this function checks for x and y collision in sequence and sets the position based on collision direction
 def collide_with_walls(sprite, group, dir):
+    #if it collides from the x direction
     if dir == 'x':
         hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
         if hits:
@@ -20,6 +21,7 @@ def collide_with_walls(sprite, group, dir):
                 sprite.pos.x = hits[0].rect.right + sprite.hit_rect.width / 2
             sprite.vel.x = 0
             sprite.hit_rect.centerx = sprite.pos.x
+    # if it collides from the y direction
     if dir == 'y':
         hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
         if hits:
@@ -32,10 +34,12 @@ def collide_with_walls(sprite, group, dir):
             sprite.hit_rect.centery = sprite.pos.y
 #adds a player class that the user will control
 class Player(Sprite):
+    #inits player
     def __init__(self, game, x, y):
         self.groups = game.all_sprites
         Sprite.__init__(self, self.groups)
         self.game = game
+       #animated player sprite
         self.spritesheet = Spritesheet(path.join(self.game.img_dir, "sprite_sheet.png"))
         self.load_images()
         self.image = pg.Surface((TILESIZE, TILESIZE))
@@ -151,13 +155,14 @@ class Wall(Sprite):
         self.groups = game.all_sprites, game.all_walls
         Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = game.wall_img
-        # self.image = pg.Surface((TILESIZE, TILESIZE))
-        # self.image.fill(GREEN)
+        #self.image = game.wall_img
+        self.image = pg.Surface((TILESIZE, TILESIZE))
+        self.image.fill(GREEN)
         self.rect = self.image.get_rect()
         self.vel = vec(0,0) 
         self.pos = vec(x,y) * TILESIZE
-        self.rect.center = self.pos
+        self.rect.topleft = self.pos
+
     def update(self):
         pass
 
@@ -194,3 +199,15 @@ class Projectile(Sprite):
         self.pos += self.speed * self.vel
         self.rect.cneter = self.pos
         
+class Grass(Sprite):
+    def __init__(self, game, x, y):
+        self.groups = game.all_sprites, game.all_grass
+        Sprite.__init__(self, self.groups)
+        self.game = game
+        self.image = game.grass_img
+        self.rect = self.image.get_rect()
+        self.vel = vec(0,0) 
+        self.pos = vec(x,y) * TILESIZE
+        self.rect.center = self.pos
+    def update(self):
+        pass

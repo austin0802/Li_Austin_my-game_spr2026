@@ -21,29 +21,65 @@ class Game:
         self.running = True
         self.playing = True
         self.game_cooldown = Cooldown(5000)
+        self.levels = ['leve1.txt','level2.txt','level3.txt','level4.txt']
         print('game instantiated...')
         
     
     # a method is a function tied to a Class
     #loads the data (images)
-    def load_data(self):
+    def load_data(self,map):
         self.game_dir = path.dirname(__file__)
         self.img_dir = path.join(self.game_dir, 'images')
         self.wall_img = pg.image.load(path.join(self.img_dir, 'wall_art.png')).convert_alpha()
-        self.map = Map(path.join(self.game_dir, 'level1.txt'))
+        self.grass_img = pg.image.load(path.join(self.img_dir, 'grass.png')).convert_alpha()
+        self.map = Map(path.join(self.game_dir, map))
         print('data is loaded')
     #adds all the sprites 
-    def new(self):
-        self.load_data()
-        self.all_sprites = pg.sprite.Group()
-        self.all_walls = pg.sprite.Group()
-        self.all_mobs = pg.sprite.Group()
-        self.all_projectiles = pg.sprite.Group()
+    #next level
+    def next_level(self):
+        #kills it so it doesn't stay loaded, kills player so there isn't two players
+        for w in self.all_walls:
+            w.kill()
+        for m in self.all_mobs:
+            m.kill()
+        for g in self.all_grass:
+            g.kill()
+        self.player.kill()
+        self.load_data(map)
         # self.player = Player(self, 15, 15)
         # self.mob = Mob(self, 4, 4) 
         # self.wall = Wall(self, WIDTH/2/TILESIZE, HEIGHT/2/TILESIZE)
         for row, tiles in enumerate(self.map.data):
             for col, tile, in enumerate(tiles):
+                if tile == '1':
+                    # call class constructor without assigning variable...when
+                    Wall(self, col, row)
+                if tile == 'P':
+                    self.player = Player(self, col, row)
+                if tile == 'M':
+                    Mob(self, col, row)
+                if tile == 'C':
+                    Coin(self, col, row)
+        self.run()
+        
+    
+    def new(self):
+        #loads map and all sprites
+        self.load_data('level1.txt')
+        self.all_sprites = pg.sprite.Group()
+        self.all_walls = pg.sprite.Group()
+        self.all_mobs = pg.sprite.Group()
+        self.all_projectiles = pg.sprite.Group()
+        self.all_grass = pg.sprite.Group()
+        # self.player = Player(self, 15, 15)
+        # self.mob = Mob(self, 4, 4) 
+        # self.wall = Wall(self, WIDTH/2/TILESIZE, HEIGHT/2/TILESIZE)
+        #looks through the map, adds the sprites       
+        for row, tiles in enumerate(self.map.data):
+            for col, tile, in enumerate(tiles):
+                '''if tile == ".":
+                    Grass(self,col,row)
+                '''
                 if tile == '1':
                     # call class constructor without assigning variable...when
                     Wall(self, col, row)
@@ -114,6 +150,9 @@ while g.running:
 
 #closes game
 pg.quit()
+
+
+    
 
 
     
