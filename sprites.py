@@ -8,30 +8,43 @@ vec = pg.math.Vector2
 def collide_hit_rect(one, two):
     return one.hit_rect.colliderect(two.rect)
 
+
+
+
+#Used Claude AI to debug old collisions. It debugged it by instead of overlapping multiple different tiles, 
+#new code measures overlap and reverts it. 
+
 # this function checks for x and y collision in sequence and sets the position based on collision direction
 def collide_with_walls(sprite, group, dir):
-    #if it collides from the x direction
+    hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
+    if not hits:
+        return
     if dir == 'x':
-        hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
-        if hits:
-            # print("collided with wall from x dir")
-            if hits[0].rect.centerx > sprite.hit_rect.centerx:
-                sprite.pos.x = hits[0].rect.left - sprite.hit_rect.width / 2
-            if hits[0].rect.centerx < sprite.hit_rect.centerx:
-                sprite.pos.x = hits[0].rect.right + sprite.hit_rect.width / 2
-            sprite.vel.x = 0
-            sprite.hit_rect.centerx = sprite.pos.x
-    # if it collides from the y direction
+        if sprite.vel.x > 0:
+            # moving right: push back by how far our right edge passed the wall's left edge
+            wall = min(hits, key=lambda w: sprite.hit_rect.right - w.rect.left)
+            penetration = sprite.hit_rect.right - wall.rect.left
+            sprite.pos.x -= penetration
+        elif sprite.vel.x < 0:
+            # moving left: push back by how far our left edge passed the wall's right edge
+            wall = min(hits, key=lambda w: w.rect.right - sprite.hit_rect.left)
+            penetration = wall.rect.right - sprite.hit_rect.left
+            sprite.pos.x += penetration
+        sprite.vel.x = 0
+        sprite.hit_rect.centerx = sprite.pos.x
     if dir == 'y':
-        hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
-        if hits:
-            # print("collided with wall from y dir")
-            if hits[0].rect.centery > sprite.hit_rect.centery:
-                sprite.pos.y = hits[0].rect.top - sprite.hit_rect.height / 2
-            if hits[0].rect.centery < sprite.hit_rect.centery:
-                sprite.pos.y = hits[0].rect.bottom + sprite.hit_rect.height / 2
-            sprite.vel.y = 0
-            sprite.hit_rect.centery = sprite.pos.y
+        if sprite.vel.y > 0:
+            # moving down: push back by how far our bottom edge passed the wall's top edge
+            wall = min(hits, key=lambda w: sprite.hit_rect.bottom - w.rect.top)
+            penetration = sprite.hit_rect.bottom - wall.rect.top
+            sprite.pos.y -= penetration
+        elif sprite.vel.y < 0:
+            # moving up: push back by how far our top edge passed the wall's bottom edge
+            wall = min(hits, key=lambda w: w.rect.bottom - sprite.hit_rect.top)
+            penetration = wall.rect.bottom - sprite.hit_rect.top
+            sprite.pos.y += penetration
+        sprite.vel.y = 0
+        sprite.hit_rect.centery = sprite.pos.y
 #adds a player class that the user will control
 class Player(Sprite):
     #inits player
@@ -119,8 +132,10 @@ class Player(Sprite):
         self.pos += self.vel * self.game.dt
         self.hit_rect.centerx = self.pos.x
         collide_with_walls(self, self.game.all_walls, 'x')
+        self.pos.x = self.hit_rect.centerx
         self.hit_rect.centery = self.pos.y
         collide_with_walls(self, self.game.all_walls, 'y')
+        self.pos.y = self.hit_rect.centery
         self.rect.center = self.hit_rect.center
 
 #adds a mob that will be teh enemy to the player
@@ -155,9 +170,9 @@ class Wall(Sprite):
         self.groups = game.all_sprites, game.all_walls
         Sprite.__init__(self, self.groups)
         self.game = game
-        #self.image = game.wall_img
-        self.image = pg.Surface((TILESIZE, TILESIZE))
-        self.image.fill(GREEN)
+        self.image = game.wall_img
+        #self.image = pg.Surface((TILESIZE, TILESIZE))
+        #self.image.fill(GREEN)
         self.rect = self.image.get_rect()
         self.vel = vec(0,0) 
         self.pos = vec(x,y) * TILESIZE
@@ -197,7 +212,7 @@ class Projectile(Sprite):
         hits = pg.sprite.spritecollide(self, self.game.all_walls, True)
         print(hits)
         self.pos += self.speed * self.vel
-        self.rect.cneter = self.pos
+        self.rect.center = self.pos
         
 class Grass(Sprite):
     def __init__(self, game, x, y):
@@ -206,7 +221,6 @@ class Grass(Sprite):
         self.game = game
         self.image = game.grass_img
         self.rect = self.image.get_rect()
-        self.vel = vec(0,0) 
         self.pos = vec(x,y) * TILESIZE
         self.rect.center = self.pos
     def update(self):

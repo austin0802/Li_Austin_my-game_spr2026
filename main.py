@@ -32,6 +32,7 @@ class Game:
         self.img_dir = path.join(self.game_dir, 'images')
         self.wall_img = pg.image.load(path.join(self.img_dir, 'wall_art.png')).convert_alpha()
         self.grass_img = pg.image.load(path.join(self.img_dir, 'grass.png')).convert_alpha()
+        self.snd_dir = path.join(self.game_dir, "sounds")
         self.map = Map(path.join(self.game_dir, map))
         print('data is loaded')
     #adds all the sprites 
@@ -60,6 +61,8 @@ class Game:
                     Mob(self, col, row)
                 if tile == 'C':
                     Coin(self, col, row)
+                if tile =='G':
+                    Grass(self,col,row)
         self.run()
         
     
@@ -89,6 +92,9 @@ class Game:
                     Mob(self, col, row)
                 if tile == 'C':
                     Coin(self, col, row)
+        pg.mixer.music.load(path.join(self.snd_dir,"soundtrack1.mp3"))
+        pg.mixer.music.play(loops=-1)
+        
         self.run()
     #defines how to run
     def run(self):
@@ -152,7 +158,3 @@ while g.running:
 pg.quit()
 
 
-    
-
-
-    
