@@ -214,14 +214,30 @@ class Projectile(Sprite):
         self.pos += self.speed * self.vel
         self.rect.center = self.pos
         
-class Grass(Sprite):
-    def __init__(self, game, x, y):
-        self.groups = game.all_sprites, game.all_grass
-        Sprite.__init__(self, self.groups)
+
+class ground(Sprite):
+    def __init__(self, game, x ,y, tile ):
+        self.groups = game.all_grounds
+        Sprite.__init__(self, self.groups) 
         self.game = game
-        self.image = game.grass_img
+
+        texture = 'S' # default texture if nothing in parenthesis
+        if '(' in tile and ')' in tile: # checks whatis inside the parenthesis
+            texture = tile[tile.find('(')+1:tile.find(')')]
+    
+        if texture == 'G':
+            self.image = game.grass_img
+        # elif texture == 'S':
+        #     self.image = game.sand_img
+        # elif texture == 'W':
+        #     self.image = game.deep_water_img
+        # elif texture == "w":
+        #     self.image = game.shallow_water_img
+        # else:
+        #     self.image = game.sand_img
+
+        # self.image = game.ground_img
         self.rect = self.image.get_rect()
-        self.pos = vec(x,y) * TILESIZE
+        self.pos = vec(x, y) * TILESIZE
         self.rect.center = self.pos
-    def update(self):
-        pass
+        #from stephen kobzar

@@ -73,25 +73,24 @@ class Game:
         self.all_walls = pg.sprite.Group()
         self.all_mobs = pg.sprite.Group()
         self.all_projectiles = pg.sprite.Group()
-        self.all_grass = pg.sprite.Group()
+        self.all_grounds = pg.sprite.Group()
         # self.player = Player(self, 15, 15)
         # self.mob = Mob(self, 4, 4) 
         # self.wall = Wall(self, WIDTH/2/TILESIZE, HEIGHT/2/TILESIZE)
         #looks through the map, adds the sprites       
         for row, tiles in enumerate(self.map.data):
             for col, tile, in enumerate(tiles):
-                '''if tile == ".":
-                    Grass(self,col,row)
-                '''
+                if tile.startswith("G"):
+                    ground(self,col,row, tile)
                 if tile == '1':
                     # call class constructor without assigning variable...when
                     Wall(self, col, row)
-                if tile == 'P':
-                    self.player = Player(self, col, row)
-                if tile == 'M':
-                    Mob(self, col, row)
-                if tile == 'C':
-                    Coin(self, col, row)
+                if tile .startswith('P'):
+                    self.player = Player(self, col, row, tile)
+                if tile .startswith ('M'):
+                    Mob(self, col, row, tile)
+                if tile .startswith('C'):
+                    Coin(self, col, row, tile)
         pg.mixer.music.load(path.join(self.snd_dir,"soundtrack1.mp3"))
         pg.mixer.music.play(loops=-1)
         
@@ -132,12 +131,12 @@ class Game:
     #draws map and sprites
     def draw(self):
         self.screen.fill(BLUE)
+        self.all_grass.draw(self.screen)   # grass drawn first (bottom)
+        self.all_sprites.draw(self.screen) # player/walls drawn on top
         self.draw_text("Hello World", 24, WHITE, WIDTH/2, TILESIZE)
         self.draw_text(str(self.dt), 24, WHITE, WIDTH/2, HEIGHT/4)
-        # self.draw_text(str(self.game_cooldown.time), 24, WHITE, WIDTH/2, HEIGHT/.5)
         self.draw_text(str(self.game_cooldown.ready()), 24, WHITE, WIDTH/2, HEIGHT/3)
         self.draw_text(str(self.player.pos), 24, WHITE, WIDTH/2, HEIGHT-TILESIZE*3)
-        self.all_sprites.draw(self.screen)
         pg.display.flip()
     #draws the text
     def draw_text(self, text, size, color, x, y):
@@ -147,6 +146,7 @@ class Game:
         text_rect = text_surface.get_rect()
         text_rect.midtop = (x,y)
         self.screen.blit(text_surface, text_rect)
+    
 #calls Game
 if __name__ == "__main__":
     g = Game()
