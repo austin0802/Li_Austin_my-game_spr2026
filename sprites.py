@@ -176,7 +176,7 @@ class Wall(Sprite):
         self.rect = self.image.get_rect()
         self.vel = vec(0,0) 
         self.pos = vec(x,y) * TILESIZE
-        self.rect.topleft = self.pos
+        self.rect.center = self.pos
 
     def update(self):
         pass
@@ -235,8 +235,9 @@ class ground(Sprite):
         #     self.image = game.shallow_water_img
         # else:
         #     self.image = game.sand_img
+        else:
+            self.image = game.grass_img
 
-        # self.image = game.ground_img
         self.rect = self.image.get_rect()
         self.pos = vec(x, y) * TILESIZE
         self.rect.center = self.pos

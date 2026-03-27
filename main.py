@@ -27,14 +27,16 @@ class Game:
     
     # a method is a function tied to a Class
     #loads the data (images)
-    def load_data(self,map):
+    def load_data(self, map):
         self.game_dir = path.dirname(__file__)
         self.img_dir = path.join(self.game_dir, 'images')
         self.wall_img = pg.image.load(path.join(self.img_dir, 'wall_art.png')).convert_alpha()
-        self.grass_img = pg.image.load(path.join(self.img_dir, 'grass.png')).convert_alpha()
+        self.grass_img = pg.transform.scale(pg.image.load(path.join(self.img_dir, 'grass.png')).convert_alpha(),
+                (TILESIZE, TILESIZE)
+            )#sourced from Claude
+        self.ground_img = pg.image.load(path.join(self.img_dir, 'grass.png')).convert_alpha()  # ADD THIS
         self.snd_dir = path.join(self.game_dir, "sounds")
         self.map = Map(path.join(self.game_dir, map))
-        print('data is loaded')
     #adds all the sprites 
     #next level
     def next_level(self):
@@ -45,7 +47,7 @@ class Game:
             m.kill()
         for g in self.all_grass:
             g.kill()
-        self.player.kill()
+            Player.kill()
         self.load_data(map)
         # self.player = Player(self, 15, 15)
         # self.mob = Mob(self, 4, 4) 
@@ -67,33 +69,45 @@ class Game:
         
     
     def new(self):
-        #loads map and all sprites
         self.load_data('level1.txt')
         self.all_sprites = pg.sprite.Group()
         self.all_walls = pg.sprite.Group()
         self.all_mobs = pg.sprite.Group()
         self.all_projectiles = pg.sprite.Group()
         self.all_grounds = pg.sprite.Group()
-        # self.player = Player(self, 15, 15)
-        # self.mob = Mob(self, 4, 4) 
-        # self.wall = Wall(self, WIDTH/2/TILESIZE, HEIGHT/2/TILESIZE)
-        #looks through the map, adds the sprites       
-        for row, tiles in enumerate(self.map.data):
-            for col, tile, in enumerate(tiles):
-                if tile.startswith("G"):
-                    ground(self,col,row, tile)
+
+        for row, line in enumerate(self.map.data):
+            col = 0
+            i = 0
+            while i < len(line):
+                # parse multi-char tokens like G(G), M(x), P(x), C(x)
+                if i + 1 < len(line) and line[i+1] == '(':
+                    end = line.find(')', i)
+                    tile = line[i:end+1]
+                    i = end + 1
+                else:
+                    tile = line[i]
+                    i += 1
+
+                # skip spaces (used as separators in the map file)
+                if tile == ' ':
+                    continue
+
+                if tile.startswith('G'):
+                    ground(self, col, row, tile)
                 if tile == '1':
-                    # call class constructor without assigning variable...when
                     Wall(self, col, row)
-                if tile .startswith('P'):
-                    self.player = Player(self, col, row, tile)
-                if tile .startswith ('M'):
-                    Mob(self, col, row, tile)
-                if tile .startswith('C'):
-                    Coin(self, col, row, tile)
-        pg.mixer.music.load(path.join(self.snd_dir,"soundtrack1.mp3"))
+                if tile.startswith('P'):
+                    self.player = Player(self, col, row)
+                if tile.startswith('M'):
+                    Mob(self, col, row)
+                if tile.startswith('C'):
+                    Coin(self, col, row)
+
+                col += 1
+
+        pg.mixer.music.load(path.join(self.snd_dir, "soundtrack1.mp3"))
         pg.mixer.music.play(loops=-1)
-        
         self.run()
     #defines how to run
     def run(self):
@@ -131,7 +145,7 @@ class Game:
     #draws map and sprites
     def draw(self):
         self.screen.fill(BLUE)
-        self.all_grass.draw(self.screen)   # grass drawn first (bottom)
+        self.all_grounds.draw(self.screen)
         self.all_sprites.draw(self.screen) # player/walls drawn on top
         self.draw_text("Hello World", 24, WHITE, WIDTH/2, TILESIZE)
         self.draw_text(str(self.dt), 24, WHITE, WIDTH/2, HEIGHT/4)
@@ -153,8 +167,5 @@ if __name__ == "__main__":
 #runs game
 while g.running:
     g.new()
-
 #closes game
 pg.quit()
-
-
