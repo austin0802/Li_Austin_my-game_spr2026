@@ -64,7 +64,7 @@ class Player(Sprite):
         self.pos = vec(x,y) * TILESIZE
         self.hit_rect = PLAYER_HIT_RECT
         self.jumping = False
-        self.moving = False
+        self.walking = False
         self.last_update = 0
         self.current_frame = 0
         #self.state_machine = StateMachine()
@@ -87,46 +87,81 @@ class Player(Sprite):
         if self.vel.x != 0 and self.vel.y != 0:
             self.vel *= 0.7071
     def load_images(self):
-        self.standing_frames = [self.spritesheet.get_image(0,0,TILESIZE, TILESIZE), 
-                                self.spritesheet.get_image(TILESIZE,0,TILESIZE, TILESIZE)]
-        self.moving_frames = [self.spritesheet.get_image(TILESIZE*2,0,TILESIZE, TILESIZE), 
-                                self.spritesheet.get_image(TILESIZE*3,0,TILESIZE, TILESIZE)]
-        for frame in self.standing_frames:
-            frame.set_colorkey(BLACK)
-        for frame in self.moving_frames:
-            frame.set_colorkey(BLACK)
+        self.standing_frames = [
+            self.spritesheet.get_image(0, TILESIZE*2, TILESIZE, TILESIZE),
+        ]
+        self.moving_right_frames = [
+            self.spritesheet.get_image(TILESIZE*2, 0, TILESIZE, TILESIZE),
+            self.spritesheet.get_image(TILESIZE*3, 0, TILESIZE, TILESIZE)
+        ]
+        self.moving_left_frames = [
+            pg.transform.flip(f, True, False) for f in self.moving_right_frames
+        ]
+        # Flip right frames to get left frames
+        self.moving_up_frames = [
+            self.spritesheet.get_image(0, TILESIZE*2, TILESIZE, TILESIZE),
+            self.spritesheet.get_image(TILESIZE, TILESIZE*2, TILESIZE, TILESIZE),
+            self.spritesheet.get_image(TILESIZE*2, TILESIZE*2, TILESIZE, TILESIZE),
+            self.spritesheet.get_image(TILESIZE*3, TILESIZE*2, TILESIZE, TILESIZE),
+
+        ]
+        self.moving_down_frames = [
+            self.spritesheet.get_image(0, TILESIZE*3, TILESIZE, TILESIZE),
+            self.spritesheet.get_image(TILESIZE, TILESIZE*3, TILESIZE, TILESIZE),
+            self.spritesheet.get_image(TILESIZE*2, TILESIZE*3, TILESIZE, TILESIZE),
+            self.spritesheet.get_image(TILESIZE*3, TILESIZE*3, TILESIZE, TILESIZE),
+
+        ]
+
+        #for frame in self.standing_frames:
+            #frame.set_colorkey(BLACK)
+        #for frame in self.moving_frames:
+            #frame.set_colorkey(BLACK)
     def animate(self):
         now = pg.time.get_ticks()
-        if not self.jumping and not self.moving:
-            if now - self.last_update > 350:
-                self.last_update = now
-                
-                self.current_frame = (self.current_frame + 1) % len(self.standing_frames)
-                bottom = self.rect.bottom
-                self.image = self.standing_frames[self.current_frame]
-                self.rect = self.image.get_rect()
-                self.rect.bottom = bottom
-        elif self.moving:
-            if now - self.last_update > 350:
-                self.last_update = now
-                self.current_frame = (self.current_frame + 1) % len(self.moving_frames)
-                bottom = self.rect.bottom
-                self.image = self.moving_frames[self.current_frame]
-                self.rect = self.image.get_rect()
-                self.rect.bottom = bottom
 
-    #def state_check(self):
-        #if self.vel != vec(0,0):
-            #self.state_machine.transition("move")
-            #self.moving = True
-        #else: 
-            #self.state_machine.transition("idle")
-            #self.moving = False
+        if not self.moving:
+            if now - self.last_update > 350:
+                self.last_update = now
+                self.current_frame = (self.current_frame + 1) % len(self.standing_frames)
+                self.image = self.standing_frames[self.current_frame]
+        else:
+            if now - self.last_update > 150:
+                self.last_update = now
+                if self.direction == "left":
+                    frames = self.moving_left_frames
+                elif self.direction == "right":
+                    frames = self.moving_right_frames
+               
+                elif self.direction == "down":
+                    frames = self.moving_down_frames
+                elif self.direction == "up":
+                    frames = self.moving_up_frames
+                else:
+                    frames = self.standing_frames  # fallback for up/down
+                self.current_frame = (self.current_frame + 1) % len(frames)
+                self.image = frames[self.current_frame]
+
+
+    def state_check(self):
+        if self.vel != vec(0,0):
+            self.moving = True
+        else:
+            self.moving = False
+
+        if self.vel.x > 0:
+            self.direction = "left"   # was "right"
+        elif self.vel.x < 0:
+            self.direction = "right"  # was "left"
+        elif self.vel.y > 0:
+            self.direction = "down"
+        elif self.vel.y < 0:
+            self.direction = "up"
     def update(self):
         # print("player updating")
        # self.state_machine.update()
         self.get_keys()
-        #self.state_check()
+        self.state_check()
         self.animate()
         self.rect.center = self.pos
         self.pos += self.vel * self.game.dt

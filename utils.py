@@ -40,10 +40,23 @@ class Cooldown:
 #adds a spritesheet class to load the spritesheet
 class Spritesheet:
     def __init__(self,filename):
-        self.spritesheet = pg.image.load(filename).convert()
+        self.spritesheet = pg.image.load(filename).convert_alpha()
     def get_image(self,x,y,width,height):
-        image = pg.Surface((width,height))
+        image = pg.Surface((width,height),pg.SRCALPHA) #makes the background transparent
         image.blit(self.spritesheet,(0,0),(x,y,width,height))
         new_image = pg.transform.scale(image, (width,height))
         image = new_image
         return image
+    
+def draw_stamina_bar(surf,x,y,pct):
+    if pct < 0:
+        pct = 0
+    BAR_LENGTH = 100
+    BAR_HEIGHT = 10
+    fill = (pct/100) * BAR_LENGTH
+    outline_rect = pg.Rect (x,y,BAR_LENGTH,BAR_HEIGHT)
+    fill_rect = pg.Rect(x,y,fll,BAR_HEIGHT)
+    pg.draw.rect(surf,YELLOW,fill_rect)
+    pg.draw.rect(surf,WHITE,outline_rect,2)
+        
+    

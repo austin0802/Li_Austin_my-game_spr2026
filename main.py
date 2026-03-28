@@ -63,8 +63,6 @@ class Game:
                     Mob(self, col, row)
                 if tile == 'C':
                     Coin(self, col, row)
-                if tile =='G':
-                    Grass(self,col,row)
         self.run()
         
     
@@ -88,11 +86,9 @@ class Game:
                 else:
                     tile = line[i]
                     i += 1
-
                 # skip spaces (used as separators in the map file)
                 if tile == ' ':
                     continue
-
                 if tile.startswith('G'):
                     ground(self, col, row, tile)
                 if tile == '1':
@@ -103,9 +99,8 @@ class Game:
                     Mob(self, col, row)
                 if tile.startswith('C'):
                     Coin(self, col, row)
-
                 col += 1
-
+#sourced from Claude
         pg.mixer.music.load(path.join(self.snd_dir, "soundtrack1.mp3"))
         pg.mixer.music.play(loops=-1)
         self.run()
@@ -140,6 +135,7 @@ class Game:
     #not done with how to update
     def update(self):
         self.all_sprites.update()
+        
         # print(len(self.all_projectiles))
 
     #draws map and sprites
