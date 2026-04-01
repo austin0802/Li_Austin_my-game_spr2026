@@ -5,10 +5,13 @@ TITLE = "My cool game..."
 FPS = 60
 TILESIZE = 32
 
-# player values
-PLAYER_SPEED = 280
+# player values, can changes these values
+PLAYER_SPEED = 330
+GRAVITY = 1
+JUMP_FORCE = -15
 MOB_SPEED = 200
 PLAYER_HIT_RECT = pg.Rect(0,0, TILESIZE-5, TILESIZE-5)
+
 # color values
 
 # tuple storing RGB values

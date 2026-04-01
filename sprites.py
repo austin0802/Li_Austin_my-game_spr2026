@@ -45,6 +45,7 @@ def collide_with_walls(sprite, group, dir):
             sprite.pos.y += penetration
         sprite.vel.y = 0
         sprite.hit_rect.centery = sprite.pos.y
+
 #adds a player class that the user will control
 class Player(Sprite):
     #inits player
@@ -62,30 +63,37 @@ class Player(Sprite):
         self.rect = self.image.get_rect()
         self.vel = vec(0,0)
         self.pos = vec(x,y) * TILESIZE
-        self.hit_rect = PLAYER_HIT_RECT
+        self.hit_rect = PLAYER_HIT_RECT.copy()
         self.jumping = False
         self.walking = False
         self.last_update = 0
+        self.on_ground = False          
         self.current_frame = 0
         #self.state_machine = StateMachine()
         #self.states: Array[State] = [PlayerIdleState(self), PlayerMoveState(self)]
         #self.state_machine.start_machine(self.states)
+    def jump(self):
+        if self.on_ground:
+            self.vel.y = JUMP_FORCE
+            self.on_ground = False
+    def events(self):
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                if self.playing:
+                    self.playing = False
+                self.running = False
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE or event.key == pg.K_w:
+                    self.player.jump()
     def get_keys(self):
-        self.vel = vec(0,0)
+        self.vel.x = 0
         keys = pg.key.get_pressed()
         if keys[pg.K_f]:
-            print(' fired a projectile')
             p = Projectile(self.game, self.rect.x, self.rect.y)
         if keys[pg.K_a]:
             self.vel.x = -PLAYER_SPEED
         if keys[pg.K_d]:
             self.vel.x = PLAYER_SPEED
-        if keys[pg.K_w]:
-            self.vel.y = -PLAYER_SPEED
-        if keys[pg.K_s]:
-            self.vel.y = PLAYER_SPEED
-        if self.vel.x != 0 and self.vel.y != 0:
-            self.vel *= 0.7071
     def load_images(self):
         self.standing_frames = [
             self.spritesheet.get_image(0, TILESIZE*2, TILESIZE, TILESIZE),
@@ -128,10 +136,11 @@ class Player(Sprite):
         else:
             if now - self.last_update > 150:
                 self.last_update = now
+                #made a mistake when defining right and left frames, so have to revert here. 
                 if self.direction == "left":
-                    frames = self.moving_left_frames
-                elif self.direction == "right":
                     frames = self.moving_right_frames
+                elif self.direction == "right":
+                    frames = self.moving_left_frames
                
                 elif self.direction == "down":
                     frames = self.moving_down_frames
@@ -142,35 +151,51 @@ class Player(Sprite):
                 self.current_frame = (self.current_frame + 1) % len(frames)
                 self.image = frames[self.current_frame]
 
+    def collide_with_ground(self):
+        hits = pg.sprite.spritecollide(self, self.game.all_walls, False, collide_hit_rect)
+        if hits:
+            if self.vel.y > 0:
+                wall = min(hits, key=lambda w: self.hit_rect.bottom - w.rect.top)
+                penetration = self.hit_rect.bottom - wall.rect.top
+                self.pos.y -= penetration
+                self.hit_rect.centery = self.pos.y
+                self.vel.y = 0
+                self.on_ground = True
+            elif self.vel.y < 0:
+                wall = min(hits, key=lambda w: w.rect.bottom - self.hit_rect.top)
+                penetration = wall.rect.bottom - self.hit_rect.top
+                self.pos.y += penetration
+                self.hit_rect.centery = self.pos.y
+                self.vel.y = 0
 
     def state_check(self):
-        if self.vel != vec(0,0):
-            self.moving = True
-        else:
-            self.moving = False
-
+        self.moving = self.vel.x != 0
         if self.vel.x > 0:
-            self.direction = "left"   # was "right"
+            self.direction = "right"
         elif self.vel.x < 0:
-            self.direction = "right"  # was "left"
-        elif self.vel.y > 0:
-            self.direction = "down"
-        elif self.vel.y < 0:
-            self.direction = "up"
+            self.direction = "left"
+        elif not self.on_ground:
+            self.direction = "up"  # or a jump frame
     def update(self):
-        # print("player updating")
-       # self.state_machine.update()
         self.get_keys()
         self.state_check()
         self.animate()
-        self.rect.center = self.pos
-        self.pos += self.vel * self.game.dt
+
+        self.vel.y += GRAVITY 
+        if self.vel.y > 20:
+            self.vel.y = 20
+
+        self.pos.x += self.vel.x * self.game.dt
         self.hit_rect.centerx = self.pos.x
         collide_with_walls(self, self.game.all_walls, 'x')
         self.pos.x = self.hit_rect.centerx
+
+        self.on_ground = False
+        self.pos.y += self.vel.y 
         self.hit_rect.centery = self.pos.y
-        collide_with_walls(self, self.game.all_walls, 'y')
+        self.collide_with_ground()
         self.pos.y = self.hit_rect.centery
+
         self.rect.center = self.hit_rect.center
 
 #adds a mob that will be teh enemy to the player

@@ -52,7 +52,7 @@ class Game:
         # self.player = Player(self, 15, 15)
         # self.mob = Mob(self, 4, 4) 
         # self.wall = Wall(self, WIDTH/2/TILESIZE, HEIGHT/2/TILESIZE)
-        for row, tiles in enumerate(self.map.data):
+        for row, twiles in enumerate(self.map.data):
             for col, tile, in enumerate(tiles):
                 if tile == '1':
                     # call class constructor without assigning variable...when
@@ -63,6 +63,7 @@ class Game:
                     Mob(self, col, row)
                 if tile == 'C':
                     Coin(self, col, row)
+        
         self.run()
         
     
@@ -78,7 +79,6 @@ class Game:
             col = 0
             i = 0
             while i < len(line):
-                # parse multi-char tokens like G(G), M(x), P(x), C(x)
                 if i + 1 < len(line) and line[i+1] == '(':
                     end = line.find(')', i)
                     tile = line[i:end+1]
@@ -118,15 +118,9 @@ class Game:
                 if self.playing:
                     self.playing = False
                 self.running = False
-            if event.type == pg.MOUSEBUTTONUP:
-                print("i can get mouse input")
             if event.type == pg.KEYDOWN:
-                if event.key == pg.K_k:
-                    print("i can determine when keys are pressed")
-
-            if event.type == pg.KEYUP:
-                if event.key == pg.K_k:
-                    print("i can determine when keys are released")
+                if event.key == pg.K_w:
+                    self.player.jump()  # call jump once on keypress
     
 
 
@@ -137,7 +131,6 @@ class Game:
         self.all_sprites.update()
         
         # print(len(self.all_projectiles))
-
     #draws map and sprites
     def draw(self):
         self.screen.fill(BLUE)
