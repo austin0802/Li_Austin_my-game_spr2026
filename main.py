@@ -16,13 +16,14 @@ class Game:
         # setting up pygame screen using tuple value for width height
         self.screen = pg.display.set_mode((WIDTH, HEIGHT))
         pg.display.set_caption(TITLE)
-
         self.clock = pg.time.Clock()
         self.running = True
         self.playing = True
         self.game_cooldown = Cooldown(5000)
         self.levels = ['leve1.txt','level2.txt','level3.txt','level4.txt']
-        print('game instantiated...')
+        self.petal_timer = 0
+        self.petal_spawn_interval = 0.3
+        #print('game instantiated...')
         
     
     # a method is a function tied to a Class
@@ -37,6 +38,10 @@ class Game:
         self.ground_img = pg.image.load(path.join(self.img_dir, 'grass.png')).convert_alpha()  # ADD THIS
         self.snd_dir = path.join(self.game_dir, "sounds")
         self.map = Map(path.join(self.game_dir, map))
+        self.background_img = pg.transform.scale(
+        pg.image.load(path.join(self.img_dir, 'background.png')).convert(),
+        (WIDTH, HEIGHT))
+
     #adds all the sprites 
     #next level
     def next_level(self):
@@ -68,13 +73,17 @@ class Game:
         
     
     def new(self):
+        #loads all data and adds sprites
         self.load_data('level1.txt')
         self.all_sprites = pg.sprite.Group()
         self.all_walls = pg.sprite.Group()
         self.all_mobs = pg.sprite.Group()
         self.all_projectiles = pg.sprite.Group()
         self.all_grounds = pg.sprite.Group()
-
+        self.all_petals = pg.sprite.Group()
+        self.petal_timer = 0
+        self.petal_spawn_interval = 0.3  # seconds between spawns
+#looks through each line in map to add the sprite
         for row, line in enumerate(self.map.data):
             col = 0
             i = 0
@@ -111,13 +120,14 @@ class Game:
             self.events()
             self.update()
             self.draw()
-    #adds the evets)
+    #adds the events
     def events(self):
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 if self.playing:
                     self.playing = False
                 self.running = False
+           #calls jump function 
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_w:
                     self.player.jump()  # call jump once on keypress
@@ -129,17 +139,23 @@ class Game:
     #not done with how to update
     def update(self):
         self.all_sprites.update()
-        
-        # print(len(self.all_projectiles))
+        self.all_petals.update()
+
+        # Spawn petals periodically
+        self.petal_timer += self.dt
+        if self.petal_timer >= self.petal_spawn_interval:
+            self.petal_timer = 0
+            Petal(self)
     #draws map and sprites
     def draw(self):
-        self.screen.fill(BLUE)
+        self.screen.blit(self.background_img, (0, 0))  # replace screen.fill(BLUE)
         self.all_grounds.draw(self.screen)
+        self.all_petals.draw(self.screen)   # petals behind player/walls
         self.all_sprites.draw(self.screen) # player/walls drawn on top
-        self.draw_text("Hello World", 24, WHITE, WIDTH/2, TILESIZE)
-        self.draw_text(str(self.dt), 24, WHITE, WIDTH/2, HEIGHT/4)
-        self.draw_text(str(self.game_cooldown.ready()), 24, WHITE, WIDTH/2, HEIGHT/3)
-        self.draw_text(str(self.player.pos), 24, WHITE, WIDTH/2, HEIGHT-TILESIZE*3)
+        #self.draw_text("Hello World", 24, WHITE, WIDTH/2, TILESIZE)
+        #self.draw_text(str(self.dt), 24, WHITE, WIDTH/2, HEIGHT/4)
+        #self.draw_text(str(self.game_cooldown.ready()), 24, WHITE, WIDTH/2, HEIGHT/3)
+        #self.draw_text(str(self.player.pos), 24, WHITE, WIDTH/2, HEIGHT-TILESIZE*3)
         pg.display.flip()
     #draws the text
     def draw_text(self, text, size, color, x, y):

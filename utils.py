@@ -55,7 +55,7 @@ def draw_stamina_bar(surf,x,y,pct):
     BAR_HEIGHT = 10
     fill = (pct/100) * BAR_LENGTH
     outline_rect = pg.Rect (x,y,BAR_LENGTH,BAR_HEIGHT)
-    fill_rect = pg.Rect(x,y,fll,BAR_HEIGHT)
+    fill_rect = pg.Rect(x,y,fill,BAR_HEIGHT)
     pg.draw.rect(surf,YELLOW,fill_rect)
     pg.draw.rect(surf,WHITE,outline_rect,2)
         

@@ -1,6 +1,6 @@
 import pygame as pg
-WIDTH = 800
-HEIGHT = 600
+WIDTH = 1200
+HEIGHT = 800
 TITLE = "My cool game..."
 FPS = 60
 TILESIZE = 32

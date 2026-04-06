@@ -2,6 +2,8 @@ import pygame as pg
 from pygame.sprite import Sprite
 from settings import *
 from os import path
+import random as random 
+import math as math
 from utils import *
 
 vec = pg.math.Vector2
@@ -72,6 +74,7 @@ class Player(Sprite):
         #self.state_machine = StateMachine()
         #self.states: Array[State] = [PlayerIdleState(self), PlayerMoveState(self)]
         #self.state_machine.start_machine(self.states)
+    #defines the jump function by changing y velocity to jumping force if player is on ground
     def jump(self):
         if self.on_ground:
             self.vel.y = JUMP_FORCE
@@ -82,10 +85,12 @@ class Player(Sprite):
                 if self.playing:
                     self.playing = False
                 self.running = False
+            #when space or w is pressed it makes the player jump
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_SPACE or event.key == pg.K_w:
                     self.player.jump()
     def get_keys(self):
+        #gets the player inputs
         self.vel.x = 0
         keys = pg.key.get_pressed()
         if keys[pg.K_f]:
@@ -95,6 +100,7 @@ class Player(Sprite):
         if keys[pg.K_d]:
             self.vel.x = PLAYER_SPEED
     def load_images(self):
+        #loads the image so it matches player direction 
         self.standing_frames = [
             self.spritesheet.get_image(0, TILESIZE*2, TILESIZE, TILESIZE),
         ]
@@ -127,7 +133,7 @@ class Player(Sprite):
             #frame.set_colorkey(BLACK)
     def animate(self):
         now = pg.time.get_ticks()
-
+#animates the sprite
         if not self.moving:
             if now - self.last_update > 350:
                 self.last_update = now
@@ -150,7 +156,7 @@ class Player(Sprite):
                     frames = self.standing_frames  # fallback for up/down
                 self.current_frame = (self.current_frame + 1) % len(frames)
                 self.image = frames[self.current_frame]
-
+#had to change the y direction collision (sourced from claude)
     def collide_with_ground(self):
         hits = pg.sprite.spritecollide(self, self.game.all_walls, False, collide_hit_rect)
         if hits:
@@ -195,7 +201,6 @@ class Player(Sprite):
         self.hit_rect.centery = self.pos.y
         self.collide_with_ground()
         self.pos.y = self.hit_rect.centery
-
         self.rect.center = self.hit_rect.center
 
 #adds a mob that will be teh enemy to the player
@@ -268,13 +273,14 @@ class Projectile(Sprite):
         self.vel = vec(1,0)
         self.pos = vec(x,y) * TILESIZE
         self.speed = 10
-    def update(self):
+    def update(self): 
         hits = pg.sprite.spritecollide(self, self.game.all_walls, True)
         print(hits)
         self.pos += self.speed * self.vel
         self.rect.center = self.pos
         
-
+#ground sprite that classifies different types of grounds
+#going to implement more ground types, so far only grass which is not used
 class ground(Sprite):
     def __init__(self, game, x ,y, tile ):
         self.groups = game.all_grounds
@@ -302,3 +308,48 @@ class ground(Sprite):
         self.pos = vec(x, y) * TILESIZE
         self.rect.center = self.pos
         #from stephen kobzar
+#petal class for asthetics
+class Petal(Sprite):
+    def __init__(self, game, x=None):
+        #new group because there are no collisions
+        self.groups = game.all_petals
+        Sprite.__init__(self, self.groups)
+        self.game = game
+        # Load petal image from the images folder
+        self.original_image = pg.image.load(path.join(game.img_dir, 'petalimage.png')).convert_alpha()
+        self.image = self.original_image.copy()
+        # Spawn at a random x along the top of the screen
+        start_x = x if x is not None else random.randint(0, WIDTH)
+        #positions the petal 
+        self.pos = vec(start_x, -self.image.get_height())
+        self.rect = self.image.get_rect()
+        self.rect.center = self.pos
+        # Fall speed and  horizontal drift
+       #randomizes downward speed
+        self.fall_speed = random.uniform(60, 130)
+        #randomizes horizontal speed
+        self.drift_speed = random.uniform(-40, 40)
+        #randomizes starting angle
+        self.wobble_offset = random.uniform(0, math.pi * 2)
+        #randomizes oscillation
+        self.wobble_speed = random.uniform(1.5, 3.5)
+        self.wobble_amplitude = random.uniform(20, 50)
+        # Rotation
+        self.angle = random.uniform(0, 360)
+        self.spin_speed = random.uniform(-60, 60)  # degrees per second
+    def update(self):
+        dt = self.game.dt
+        # Wobble side to side using a sine wave
+        time_elapsed = pg.time.get_ticks() / 1000
+        #uses sine wave to calculate the wobble with variables above
+        wobble = math.sin(time_elapsed * self.wobble_speed + self.wobble_offset) * self.wobble_amplitude
+        # Update position
+        self.pos.y += self.fall_speed * dt
+        self.pos.x += (self.drift_speed + wobble) * dt
+        # Rotate using original image to avoid quality degradation
+        self.angle += self.spin_speed * dt
+        self.image = pg.transform.rotate(self.original_image, self.angle)
+        self.rect = self.image.get_rect(center=self.pos)
+        # Kill petal once it falls off the bottom of the screen
+        if self.pos.y > HEIGHT + self.rect.height:
+            self.kill()
