@@ -328,7 +328,7 @@ class Petal(Sprite):
        #randomizes downward speed
         self.fall_speed = random.uniform(60, 130)
         #randomizes horizontal speed
-        self.drift_speed = random.uniform(-40, 40)
+        self.drift_speed = random.uniform(-90, 10)
         #randomizes starting angle
         self.wobble_offset = random.uniform(0, math.pi * 2)
         #randomizes oscillation
@@ -353,3 +353,17 @@ class Petal(Sprite):
         # Kill petal once it falls off the bottom of the screen
         if self.pos.y > HEIGHT + self.rect.height:
             self.kill()
+#adds a portal class that makes it when it is collided with it moves to the next level
+class Portal(Sprite):
+    def __init__(self, game, x, y):
+        #new class, cannot use all_walls because collisions will break
+        self.groups = game.all_sprites, game.all_portals
+        Sprite.__init__(self, self.groups)
+        self.game = game
+        self.image = game.portal
+       #loads portal image
+        self.rect = self.image.get_rect()
+        self.pos = vec(x, y) * TILESIZE
+        self.rect.center = self.pos
+    def update(self):
+        pass
