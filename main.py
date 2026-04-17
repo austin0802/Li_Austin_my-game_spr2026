@@ -81,13 +81,13 @@ class Game:
                 if tile.startswith('C'):
                     Coin(self, col, row)
                 if tile.startswith('A'):
-                    Portal(self, col, row)   # <-- the new door sprite
+                    Portal(self, col, row)   #the new Portal sprite
                 col += 1
     def new(self):
         #inits all sprites
         self.current_level_index = 0        
         #adding more levels, but for now keep these levels
-        self.levels = ['level1.txt', 'level2.txt']
+        self.levels = ['level1.txt', 'level2.txt','level3.txt']
         self.all_sprites = pg.sprite.Group()
         self.all_walls = pg.sprite.Group()      
         self.all_mobs = pg.sprite.Group()       
@@ -174,9 +174,9 @@ class Game:
         #self.draw_text("Hello World", 24, WHITE, WIDTH/2, TILESIZE)
         #self.draw_text(str(self.dt), 24, WHITE, WIDTH/2, HEIGHT/4)
         #self.draw_text(str(self.game_cooldown.ready()), 24, WHITE, WIDTH/2, HEIGHT/3)
-        #self.draw_text(str(self.player.pos), 24, WHITE, WIDTH/2, HEIGHT-TILESIZE*3)
+        self.draw_text(str(self.player.pos), 24, WHITE, WIDTH/2, HEIGHT-TILESIZE*3)
         pg.display.flip()
-    #draws the text
+    #draws the textd    
     def draw_text(self, text, size, color, x, y):
         font_name = pg.font.match_font('arial')
         font = pg.font.Font(font_name, size)

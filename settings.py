@@ -11,7 +11,9 @@ GRAVITY = 1
 JUMP_FORCE = -15
 MOB_SPEED = 200
 PLAYER_HIT_RECT = pg.Rect(0,0, TILESIZE-5, TILESIZE-5)
-
+DASH_SPEED = 1200
+DASH_DURATION = 0.15
+DASH_COOLDOWN = 1
 # color values
 
 # tuple storing RGB values

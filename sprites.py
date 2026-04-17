@@ -66,19 +66,53 @@ class Player(Sprite):
         self.vel = vec(0,0)
         self.pos = vec(x,y) * TILESIZE
         self.hit_rect = PLAYER_HIT_RECT.copy()
+       #inits player values
         self.jumping = False
         self.walking = False
         self.last_update = 0
         self.on_ground = False          
+        self.dashing = False
+        self.dash_cooldown_timer = 0
+        self.dash_dir = vec(1,0)
+        self.dash_key_held = False
+        self.direction = "right"
+        self.moving = False
         self.current_frame = 0
         #self.state_machine = StateMachine()
         #self.states: Array[State] = [PlayerIdleState(self), PlayerMoveState(self)]
         #self.state_machine.start_machine(self.states)
     #defines the jump function by changing y velocity to jumping force if player is on ground
     def jump(self):
+        #if player is on ground, then set vel y to jump force and change on ground
         if self.on_ground:
             self.vel.y = JUMP_FORCE
             self.on_ground = False
+    
+    def dash(self):
+        # adds a cooldown to the dash
+        if self.dashing:
+            return
+        if self.dash_cooldown_timer > 0:
+            return
+ 
+        #checks for keys
+        keys = pg.key.get_pressed()
+        dx = 0
+        dy = 0
+        #only dash if in air
+        if self.on_ground is False:
+            if keys[pg.K_a]:
+                dx = -1
+            if keys[pg.K_d]:
+                dx = 1
+            if dx == 0:
+                dx = -1 if self.direction == "left" else 1
+        #sets the dash direction and adds a cooldown, timer and makes player dash
+        self.dash_dir = vec(dx, dy)
+        self.dashing = True
+        #values in settings that can be modified
+        self.dash_timer = DASH_DURATION
+        self.dash_cooldown_timer = DASH_COOLDOWN
     def events(self):
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -90,7 +124,7 @@ class Player(Sprite):
                 if event.key == pg.K_SPACE or event.key == pg.K_w:
                     self.player.jump()
     def get_keys(self):
-        #gets the player inputs
+        #gets the player inputse
         self.vel.x = 0
         keys = pg.key.get_pressed()
         if keys[pg.K_f]:
@@ -99,6 +133,15 @@ class Player(Sprite):
             self.vel.x = -PLAYER_SPEED
         if keys[pg.K_d]:
             self.vel.x = PLAYER_SPEED
+        #uses LSHIFT for dash
+        if keys[pg.K_LSHIFT]:
+            if not self.dash_key_held:
+                #Calls dash function
+                self.dash()
+                self.dash_key_held = True
+        else:
+            self.dash_key_held = False
+
     def load_images(self):
         #loads the image so it matches player direction 
         self.standing_frames = [
@@ -155,7 +198,7 @@ class Player(Sprite):
                 else:
                     frames = self.standing_frames  # fallback for up/down
                 self.current_frame = (self.current_frame + 1) % len(frames)
-                self.image = frames[self.current_frame]
+                self.image = frames[self.current_frame]            
 #had to change the y direction collision (sourced from claude)
     def collide_with_ground(self):
         hits = pg.sprite.spritecollide(self, self.game.all_walls, False, collide_hit_rect)
@@ -187,22 +230,34 @@ class Player(Sprite):
         self.state_check()
         self.animate()
 
-        self.vel.y += GRAVITY 
-        if self.vel.y > 20:
-            self.vel.y = 20
-
+ 
+        # Tick cooldown timers
+        if self.dash_cooldown_timer > 0:
+            self.dash_cooldown_timer -= self.game.dt
+ 
+        if self.dashing:
+            self.dash_timer -= self.game.dt
+            if self.dash_timer <= 0:
+                self.dashing = False
+            # While dashing: override velocity and suppress gravity
+            self.vel.x = self.dash_dir.x * DASH_SPEED
+            self.vel.y = self.dash_dir.y * DASH_SPEED
+        else:
+            self.vel.y += GRAVITY
+            if self.vel.y > 20:
+                self.vel.y = 20
         self.pos.x += self.vel.x * self.game.dt
         self.hit_rect.centerx = self.pos.x
         collide_with_walls(self, self.game.all_walls, 'x')
         self.pos.x = self.hit_rect.centerx
-
+ 
         self.on_ground = False
         self.pos.y += self.vel.y 
         self.hit_rect.centery = self.pos.y
         self.collide_with_ground()
         self.pos.y = self.hit_rect.centery
         self.rect.center = self.hit_rect.center
-
+ 
 #adds a mob that will be teh enemy to the player
 class Mob(Sprite):
     def __init__(self, game, x, y):
