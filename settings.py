@@ -14,8 +14,13 @@ PLAYER_HIT_RECT = pg.Rect(0,0, TILESIZE-5, TILESIZE-5)
 DASH_SPEED = 1200
 DASH_DURATION = 0.15
 DASH_COOLDOWN = 1
-# color values
-
+#Misc values
+LEVEL_BACKGROUNDS = {
+    'level1.txt': 'background1.png',
+    'level2.txt': 'background2.png',
+    'level3.txt': 'background3.png',
+    'level4.txt': 'background4.png'
+}
 # tuple storing RGB values
 BLUE = (0,0,255)
 WHITE = (255,255,255)
