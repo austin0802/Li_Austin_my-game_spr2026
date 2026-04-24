@@ -76,6 +76,7 @@ class Player(Sprite):
         self.dash_dir = vec(1,0)
         self.dash_key_held = False
         self.direction = "right"
+        self.trail_timer = 0
         self.moving = False
         self.current_frame = 0
         #self.state_machine = StateMachine()
@@ -92,9 +93,10 @@ class Player(Sprite):
         # adds a cooldown to the dash
         if self.dashing:
             return
+
+
         if self.dash_cooldown_timer > 0:
             return
- 
         #checks for keys
         keys = pg.key.get_pressed()
         dx = 0
@@ -225,12 +227,22 @@ class Player(Sprite):
             self.direction = "left"
         elif not self.on_ground:
             self.direction = "up"  # or a jump frame
+    #sourced from Claude
+#how can I implement a jump petal class where you can jump onto the petal?
+    def collide_with_jumppetals(self):# new function to collide with the jump petals
+        hits = pg.sprite.spritecollide(self, self.game.all_jumppetals, False)
+        for petal in hits:
+            # only bounce if player is falling and feet are near the top of the petal
+            if self.vel.y > 0 and self.hit_rect.bottom <= petal.rect.centery + 12:
+                self.pos.y = petal.rect.top - self.hit_rect.height / 2
+                self.hit_rect.centery = self.pos.y
+                self.vel.y = JUMP_FORCE  # bounce the same as a normal jump
+                self.on_ground = True
+                self.bumped = True #used for wobbling if collided with
     def update(self):
         self.get_keys()
         self.state_check()
         self.animate()
-
- 
         # Tick cooldown timers
         if self.dash_cooldown_timer > 0:
             self.dash_cooldown_timer -= self.game.dt
@@ -242,21 +254,29 @@ class Player(Sprite):
             # While dashing: override velocity and suppress gravity
             self.vel.x = self.dash_dir.x * DASH_SPEED
             self.vel.y = self.dash_dir.y * DASH_SPEED
+            self.trail_timer += self.game.dt
+            if self.trail_timer >= 0.03:
+                self.trail_timer = 0
+                DashTrail(self.game, self.rect.centerx, self.rect.centery, self.dash_dir.x)  
         else:
             self.vel.y += GRAVITY
+            self.trail_timer = 0
             if self.vel.y > 20:
                 self.vel.y = 20
         self.pos.x += self.vel.x * self.game.dt
         self.hit_rect.centerx = self.pos.x
         collide_with_walls(self, self.game.all_walls, 'x')
         self.pos.x = self.hit_rect.centerx
- 
         self.on_ground = False
         self.pos.y += self.vel.y 
         self.hit_rect.centery = self.pos.y
         self.collide_with_ground()
+        self.collide_with_ground()
+        self.collide_with_jumppetals()   
+        self.pos.y = self.hit_rect.centery
         self.pos.y = self.hit_rect.centery
         self.rect.center = self.hit_rect.center
+    
  
 #adds a mob that will be teh enemy to the player
 class Mob(Sprite):
@@ -302,9 +322,9 @@ class Wall(Sprite):
         pass
 
 #adding a coin sprite
-class Coin(Sprite):
+class Orb(Sprite):
     def __init__(self, game, x, y):
-        self.groups = game.all_sprites, game.all_walls
+        self.groups = game.all_orbs
         Sprite.__init__(self, self.groups)
         self.game = game
         self.image = pg.Surface((TILESIZE, TILESIZE))
@@ -315,6 +335,7 @@ class Coin(Sprite):
         self.rect.center = self.pos
     def update(self):
         pass
+    
     #inits coin sprite
 #adding a projectile class
 class Projectile(Sprite):
@@ -367,7 +388,7 @@ class ground(Sprite):
 class Petal(Sprite):
     def __init__(self, game, x=None):
         #new group because there are no collisions
-        self.groups = game.all_petals
+        self.groups = game.all_petals #might implement a different petal type game.all_walls
         Sprite.__init__(self, self.groups)
         self.game = game
         # Load petal image from the images folder
@@ -422,3 +443,93 @@ class Portal(Sprite):
         self.rect.center = self.pos
     def update(self):
         pass
+#dashing trail for a trial when you dash
+class DashTrail(Sprite):
+    def __init__(self,game,x,y,direction_x):
+        #new group
+        self.groups = game.all_dash_trails
+        Sprite.__init__(self, self.groups)
+        self.game = game
+        #sets image to dash image
+        base = pg.image.load(path.join(game.img_dir, 'dash.png')).convert_alpha()
+        #transforms dimensions
+        base = pg.transform.scale(base, (TILESIZE * 2, TILESIZE))
+        if direction_x < 0:
+            base = pg.transform.flip(base, True, False)
+        self.original_image = base
+        self.image = self.original_image.copy()
+        #sets where the image is 
+        self.rect = self.image.get_rect(center=(x, y))
+        #adds opacity
+        self.alpha = 220
+        self.fade_speed = 600  #  units per second
+    def update(self):
+        #kills to reset dash imaeg
+        self.alpha -= self.fade_speed * self.game.dt
+        if self.alpha <= 0:
+            self.kill()
+            return
+        self.image = self.original_image.copy()
+        self.image.set_alpha(int(self.alpha))
+class JumpPetal(Sprite):
+    def __init__(self, game, x=None):
+        #new group because there are no collisions
+        #nearly identical attributes to normal petal except for 
+        #self.alpha and bumped which are used to detemrine wobble when collisions occur
+        self.groups = game.all_jumppetals #might implement a different petal type game.all_walls
+        Sprite.__init__(self, self.groups)
+        self.game = game
+        # Load petal image from the images folder
+        self.original_image = pg.image.load(path.join(game.img_dir, 'JumpPetal.png')).convert_alpha()
+        self.image = self.original_image.copy()
+        # Spawn at a random x along the top of the screen
+        start_x = x if x is not None else random.randint(0, WIDTH)
+        #positions the petal 
+        self.pos = vec(start_x, -self.image.get_height())
+        self.rect = self.image.get_rect()
+        self.rect.center = self.pos
+        # Fall speed and  horizontal drift
+       #randomizes downward speed, jumppetals fall slower
+        self.fall_speed = random.uniform(20, 60)
+        #randomizes horizontal speed
+        self.drift_speed = random.uniform(-90, 10)
+        #randomizes starting angle
+        self.wobble_offset = random.uniform(0, math.pi * 2)
+        #randomizes oscillation
+        self.wobble_speed = random.uniform(1.5, 3.5)
+        self.wobble_amplitude = random.uniform(20, 50)
+        # Rotation
+        self.angle = random.uniform(0, 360)
+        self.spin_speed = random.uniform(-60, 60)  # degrees per second
+        self.bumped = False
+        self.alpha = 255
+        
+    def update(self):
+        dt = self.game.dt
+        time_elapsed = pg.time.get_ticks() / 1000
+        #uses sine wave to calculate the wobble with variables above
+        if self.bumped is True:
+            wobble = math.sin(time_elapsed * self.wobble_speed + self.wobble_offset) * self.wobble_amplitude
+            self.wobble_amplitude = min(self.wobble_amplitude + 300 * dt, 200)
+            self.spin_speed *= 2
+            self.alpha -= 400 * dt
+            if self.alpha <= 0:
+                self.kill()
+                return
+            self.image = pg.transform.rotate(self.original_image, self.angle)
+            self.image.set_alpha(int(self.alpha))
+            self.rect = self.image.get_rect(center=self.pos)
+        else:
+           # Wobble side to side using a sine wave
+            wobble = math.sin(time_elapsed * self.wobble_speed + self.wobble_offset) * self.wobble_amplitude
+            # Update position
+            self.pos.y += self.fall_speed * dt
+            self.pos.x += (self.drift_speed + wobble) * dt
+            # Rotate using original image to avoid quality degradation
+            self.angle += self.spin_speed * dt
+            self.image = pg.transform.rotate(self.original_image, self.angle)
+            self.rect = self.image.get_rect(center=self.pos)
+            # Kill petal once it falls off the bottom of the screen
+            if self.pos.y > HEIGHT + self.rect.height:
+                self.kill()
+        

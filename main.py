@@ -4,6 +4,7 @@ from os import path
 from settings import *
 from sprites import *
 from utils import *
+import random as random
 vec = pg.math.Vector2
 
 # import settings
@@ -57,6 +58,10 @@ class Game:
             sprite.kill()
         for sprite in self.all_petals:
             sprite.kill()
+        for sprite in self.all_jumppetals:
+            sprite.kill()
+        for sprite in self.all_dash_trails:
+            sprite.kill()
         # Load next map
         self.load_data(self.levels[self.current_level_index])
         # Rebuild sprite groups (they still exist, just emptied)
@@ -97,6 +102,9 @@ class Game:
         self.all_petals = pg.sprite.Group()     
         self.all_portals = pg.sprite.Group()  
         self.petal_timer = 0
+        self.all_dash_trails = pg.sprite.Group()
+        self.all_jumppetals = pg.sprite.Group()
+      
         #interactable spawn interval for petals, will change eventually for each level
         self.petal_spawn_interval = 0.3
         self.load_data(self.levels[self.current_level_index])
@@ -154,7 +162,11 @@ class Game:
     def update(self):
         self.all_sprites.update()
         self.all_petals.update()
+        self.all_dash_trails.update()
+        self.all_jumppetals.update()  
 
+        # in Game.update(), add below the existing petal spawning:
+   
         # checks if the player reached the portal
         portal_hits = pg.sprite.spritecollide(self.player, self.all_portals, False)
         #boolean value determines if player moves onto next level
@@ -166,6 +178,8 @@ class Game:
         if self.petal_timer >= self.petal_spawn_interval:
             self.petal_timer = 0
             Petal(self)
+            if random.randint(1, 5) == 1:   # 1 in 5 chance to spawn a jump petal
+                JumpPetal(self)
     #draws map and sprites and petals
     def draw(self):
         self.screen.blit(self.background_img, (0, 0)) 
@@ -175,6 +189,8 @@ class Game:
         #self.draw_text("Hello World", 24, WHITE, WIDTH/2, TILESIZE)
         #self.draw_text(str(self.dt), 24, WHITE, WIDTH/2, HEIGHT/4)
         #self.draw_text(str(self.game_cooldown.ready()), 24, WHITE, WIDTH/2, HEIGHT/3)
+        self.all_dash_trails.draw(self.screen)  # trail behind player
+        self.all_jumppetals.draw(self.screen)
         self.draw_text(str(self.player.pos), 24, WHITE, WIDTH/2, HEIGHT-TILESIZE*3)
         pg.display.flip()
     #draws the text
