@@ -62,6 +62,8 @@ class Game:
             sprite.kill()
         for sprite in self.all_dash_trails:
             sprite.kill()
+        for sprite in self.all_moving_platforms:
+            sprite.kill()
         # Load next map
         self.load_data(self.levels[self.current_level_index])
         # Rebuild sprite groups (they still exist, just emptied)
@@ -84,11 +86,16 @@ class Game:
                     self.player = Player(self, col, row)
                 if tile.startswith('M'):
                     Mob(self, col, row)
-                if tile.startswith('C'):
-                    Coin(self, col, row)
+                if tile.startswith('O'):
+                    Orb(self, col, row)
                 if tile.startswith('A'):
                     Portal(self, col, row)   #the new Portal sprite
+                if tile.startswith('F'):
+                    MovingPlatform(self, col, row)           
+                if tile.startswith('J'):
+                    MovingPlatform(self, col, row, axis='y') 
                 col += 1
+
     def new(self):
         #inits all sprites
         self.current_level_index = 0        
@@ -104,7 +111,7 @@ class Game:
         self.petal_timer = 0
         self.all_dash_trails = pg.sprite.Group()
         self.all_jumppetals = pg.sprite.Group()
-      
+        self.all_moving_platforms = pg.sprite.Group()
         #interactable spawn interval for petals, will change eventually for each level
         self.petal_spawn_interval = 0.3
         self.load_data(self.levels[self.current_level_index])
@@ -135,6 +142,10 @@ class Game:
                     Coin(self, col, row)
                 if tile.startswith('A'):
                     Portal(self,col,row)
+                if tile.startswith('F'):
+                    MovingPlatform(self, col, row)           
+                if tile.startswith('J'):
+                    MovingPlatform(self, col, row, axis='y') 
                 col += 1
         pg.mixer.music.load(path.join(self.snd_dir, "soundtrack1.mp3"))
         pg.mixer.music.play(loops=-1)
@@ -164,8 +175,7 @@ class Game:
         self.all_petals.update()
         self.all_dash_trails.update()
         self.all_jumppetals.update()  
-
-        # in Game.update(), add below the existing petal spawning:
+    
    
         # checks if the player reached the portal
         portal_hits = pg.sprite.spritecollide(self.player, self.all_portals, False)
@@ -186,16 +196,16 @@ class Game:
         self.all_grounds.draw(self.screen)
         self.all_petals.draw(self.screen)   # petals behind player/walls
         self.all_sprites.draw(self.screen) # player/walls drawn on top
-        #self.draw_text("Hello World", 24, WHITE, WIDTH/2, TILESIZE)
+        #self.draw_text("Petals in the Wind", 30, BGPINK, WIDTH/2, TILESIZE^2)
         #self.draw_text(str(self.dt), 24, WHITE, WIDTH/2, HEIGHT/4)
         #self.draw_text(str(self.game_cooldown.ready()), 24, WHITE, WIDTH/2, HEIGHT/3)
         self.all_dash_trails.draw(self.screen)  # trail behind player
         self.all_jumppetals.draw(self.screen)
-        self.draw_text(str(self.player.pos), 24, WHITE, WIDTH/2, HEIGHT-TILESIZE*3)
+        #self.draw_text(str(self.player.pos), 24, WHITE, WIDTH/2, HEIGHT-TILESIZE*3)
         pg.display.flip()
     #draws the text
     def draw_text(self, text, size, color, x, y):
-        font_name = pg.font.match_font('arial')
+        font_name = pg.font.match_font('Comfortaa')
         font = pg.font.Font(font_name, size)
         text_surface = font.render(text, True, color)
         text_rect = text_surface.get_rect()

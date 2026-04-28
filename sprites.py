@@ -227,7 +227,7 @@ class Player(Sprite):
             self.direction = "left"
         elif not self.on_ground:
             self.direction = "up"  # or a jump frame
-    #sourced from Claude
+#sourced from Claude
 #how can I implement a jump petal class where you can jump onto the petal?
     def collide_with_jumppetals(self):# new function to collide with the jump petals
         hits = pg.sprite.spritecollide(self, self.game.all_jumppetals, False)
@@ -238,7 +238,25 @@ class Player(Sprite):
                 self.hit_rect.centery = self.pos.y
                 self.vel.y = JUMP_FORCE  # bounce the same as a normal jump
                 self.on_ground = True
-                self.bumped = True #used for wobbling if collided with
+                self.bumped = True #used for wobbling if collided with Player
+    # Add this method to the Player class
+    def carry_with_platform(self):
+        if not self.on_ground:
+            return
+        for platform in self.game.all_moving_platforms:
+#Checks if player is on platform            
+            Player_on_top = (
+                self.hit_rect.bottom <= platform.rect.top + 6 and
+                self.hit_rect.bottom >= platform.rect.top - 6 and
+                self.hit_rect.right > platform.rect.left and
+                self.hit_rect.left < platform.rect.right
+            )
+            if Player_on_top:
+                if platform.axis == 'x':
+                    self.pos.x += platform.speed * platform.direction * self.game.dt
+                else:
+                    self.pos.y += platform.speed * platform.direction * self.game.dt
+                break
     def update(self):
         self.get_keys()
         self.state_check()
@@ -263,6 +281,7 @@ class Player(Sprite):
             self.trail_timer = 0
             if self.vel.y > 20:
                 self.vel.y = 20
+        self.carry_with_platform()
         self.pos.x += self.vel.x * self.game.dt
         self.hit_rect.centerx = self.pos.x
         collide_with_walls(self, self.game.all_walls, 'x')
@@ -532,4 +551,29 @@ class JumpPetal(Sprite):
             # Kill petal once it falls off the bottom of the screen
             if self.pos.y > HEIGHT + self.rect.height:
                 self.kill()
-        
+class MovingPlatform(Sprite):
+    def __init__(self, game, x, y, distance=3, speed=80, axis='x'): #adds movement axis for wall and speed
+        self.groups = game.all_sprites, game.all_walls, game.all_moving_platforms
+        Sprite.__init__(self, self.groups)
+        self.game = game
+        self.image = game.wall_img          # reuses wall texture
+        self.rect = self.image.get_rect()
+        self.pos = vec(x, y) * TILESIZE
+        self.start_pos = vec(self.pos)
+        self.rect.center = self.pos
+        self.distance = distance * TILESIZE # how far it travels in tiles
+        self.speed = speed #veloocity
+        self.axis = axis    # 'x' = horizontal, 'y' = vertical
+        self.direction = 1  
+
+    def update(self):
+        dt = self.game.dt
+        if self.axis == 'x':
+            self.pos.x += self.speed * self.direction * dt
+            if abs(self.pos.x - self.start_pos.x) >= self.distance:
+                self.direction *= -1
+        else:
+            self.pos.y += self.speed * self.direction * dt
+            if abs(self.pos.y - self.start_pos.y) >= self.distance:
+                self.direction *= -1
+        self.rect.center = self.pos
