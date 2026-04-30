@@ -34,10 +34,11 @@ class Game:
         self.grass_img = pg.transform.scale(pg.image.load(path.join(self.img_dir, 'grass.png')).convert_alpha(),
                 (TILESIZE, TILESIZE)
             )
-        self.ground_img = pg.image.load(path.join(self.img_dir, 'grass.png')).convert_alpha()  # ADD THIS
+        self.ground_img = pg.image.load(path.join(self.img_dir, 'grass.png')).convert_alpha() 
         self.snd_dir = path.join(self.game_dir, "sounds")
         self.map = Map(path.join(self.game_dir, map))
-        self.portal = pg.image.load(path.join(self.img_dir, 'portal.png')).convert_alpha()  # ADD THIS
+        self.portal = pg.image.load(path.join(self.img_dir, 'portal.png')).convert_alpha()  
+        self.WindStreak = pg.image.load(path.join(self.img_dir,'wind.png')).convert_alpha()
         bg_filename = LEVEL_BACKGROUNDS.get(map, 'background.png')
         self.background_img = pg.transform.scale(
         pg.image.load(path.join(self.img_dir, bg_filename)).convert(),
@@ -84,6 +85,8 @@ class Game:
                     Wall(self, col, row)
                 if tile.startswith('P'):
                     self.player = Player(self, col, row)
+                    self.spawn_pos = pg.math.Vector2(col, row) * TILESIZE 
+#stores the spawn position value
                 if tile.startswith('M'):
                     Mob(self, col, row)
                 if tile.startswith('O'):
@@ -95,6 +98,7 @@ class Game:
                 if tile.startswith('J'):
                     MovingPlatform(self, col, row, axis='y') 
                 col += 1
+            
 
     def new(self):
         #inits all sprites
@@ -112,6 +116,12 @@ class Game:
         self.all_dash_trails = pg.sprite.Group()
         self.all_jumppetals = pg.sprite.Group()
         self.all_moving_platforms = pg.sprite.Group()
+        self.wind_force = 0      #force of wind
+        self.wind_timer = 4.0   #intervals between gusts
+        self.wind_active = False
+        self.wind_streak_timer = 0
+        self.all_wind_streaks = pg.sprite.Group()
+
         #interactable spawn interval for petals, will change eventually for each level
         self.petal_spawn_interval = 0.3
         self.load_data(self.levels[self.current_level_index])
@@ -127,7 +137,6 @@ class Game:
                 else:
                     tile = line[i]
                     i += 1
-                # skip spaces (used as separators in the map file)
                 if tile == ' ':
                     continue
                 if tile.startswith('G'):
@@ -136,6 +145,8 @@ class Game:
                     Wall(self, col, row)
                 if tile.startswith('P'):
                     self.player = Player(self, col, row)
+                    self.spawn_pos = pg.math.Vector2(col, row) * TILESIZE
+
                 if tile.startswith('M'):
                     Mob(self, col, row)
                 if tile.startswith('C'):
@@ -150,6 +161,11 @@ class Game:
         pg.mixer.music.load(path.join(self.snd_dir, "soundtrack1.mp3"))
         pg.mixer.music.play(loops=-1)
         self.run()
+    #respawns player once they fall below certain y pos
+    def respawn(self):
+        self.player.pos = self.spawn_pos.copy()
+        self.player.vel = pg.math.Vector2(0, 0)
+        self.player.on_ground = False
     #defines how to run
     def run(self):
         while self.running:
@@ -175,13 +191,32 @@ class Game:
         self.all_petals.update()
         self.all_dash_trails.update()
         self.all_jumppetals.update()  
-    
+        self.all_wind_streaks.update()
    
         # checks if the player reached the portal
         portal_hits = pg.sprite.spritecollide(self.player, self.all_portals, False)
         #boolean value determines if player moves onto next level
         if portal_hits:
             self.next_level()
+        self.wind_timer -= self.dt
+        if self.wind_timer <= 0:
+            if self.wind_active:
+                # when gust is over enter calm period between 3-8s
+                self.wind_active = False
+                self.wind_force = 0
+                self.wind_timer = random.uniform(3.0, 8.0)
+            else:
+                # start a new gust with random strength
+                self.wind_active = True
+                self.wind_force = -random.uniform(40, 160)
+                self.wind_timer = random.uniform(1.5, 4.0)
+
+        # spawn visual streaks while wind is blowing
+        if self.wind_active:
+            self.wind_streak_timer -= self.dt
+            if self.wind_streak_timer <= 0:
+                self.wind_streak_timer = random.uniform(0.02, 0.08)
+                WindStreak(self)
 
         # Petal spawning
         self.petal_timer += self.dt
@@ -190,6 +225,8 @@ class Game:
             Petal(self)
             if random.randint(1, 5) == 1:   # 1 in 5 chance to spawn a jump petal
                 JumpPetal(self)
+        if self.player.pos.y > HEIGHT + TILESIZE * 2:
+            self.respawn()
     #draws map and sprites and petals
     def draw(self):
         self.screen.blit(self.background_img, (0, 0)) 
@@ -201,6 +238,8 @@ class Game:
         #self.draw_text(str(self.game_cooldown.ready()), 24, WHITE, WIDTH/2, HEIGHT/3)
         self.all_dash_trails.draw(self.screen)  # trail behind player
         self.all_jumppetals.draw(self.screen)
+        self.all_wind_streaks.draw(self.screen)  # wind behind petals/player
+
         #self.draw_text(str(self.player.pos), 24, WHITE, WIDTH/2, HEIGHT-TILESIZE*3)
         pg.display.flip()
     #draws the text

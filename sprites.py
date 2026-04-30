@@ -577,3 +577,30 @@ class MovingPlatform(Sprite):
             if abs(self.pos.y - self.start_pos.y) >= self.distance:
                 self.direction *= -1
         self.rect.center = self.pos
+class WindStreak(Sprite):
+    def __init__(self, game):
+        self.groups = game.all_wind_streaks
+        Sprite.__init__(self, self.groups)
+        self.game = game
+        # random length and vertical position
+        self.length = random.randint(80, 180)
+        self.thickness = random.randint(3, 6)
+        start_x = WIDTH + self.length   #spawns on right side
+        start_y = random.randint(0, HEIGHT) #spawns anywhere on y axis
+        # speed tied to current wind strength so stronger gusts are faster streaks
+        #this part was generated with claude
+        #prompt: how can i hmake it so when the wind is thicker it goes faster
+        self.speed = abs(game.wind_force) * random.uniform(0.8, 1.4) + 80
+        self.alpha = random.randint(180, 255)
+        base = pg.transform.scale(game.WindStreak, (self.length, max(self.thickness + 2, 3)))
+        self.image = base.copy()
+        self.image.set_alpha(self.alpha)
+        self.rect = self.image.get_rect()
+        self.pos = vec(start_x, start_y)
+        self.rect.center = self.pos
+    def update(self):
+        self.pos.x -= self.speed * self.game.dt
+        self.rect.center = self.pos
+        # kill once fully off the left edge
+        if self.pos.x < -self.length:
+            self.kill()
