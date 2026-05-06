@@ -43,6 +43,9 @@ class Game:
         self.background_img = pg.transform.scale(
         pg.image.load(path.join(self.img_dir, bg_filename)).convert(),
         (WIDTH, HEIGHT))
+        self.meteor_img = pg.transform.scale(
+        pg.image.load(path.join(self.img_dir,'meteor.png')).convert(),
+        (WIDTH, HEIGHT))
     #adds all the sprites 
     #next level
     def next_level(self):
@@ -64,6 +67,8 @@ class Game:
         for sprite in self.all_dash_trails:
             sprite.kill()
         for sprite in self.all_moving_platforms:
+            sprite.kill()
+        for sprite in self.all_meteors:
             sprite.kill()
         # Load next map
         self.load_data(self.levels[self.current_level_index])
@@ -116,11 +121,14 @@ class Game:
         self.all_dash_trails = pg.sprite.Group()
         self.all_jumppetals = pg.sprite.Group()
         self.all_moving_platforms = pg.sprite.Group()
-        self.wind_force = 0      #force of wind
+        self.wind_force = 0      #force of   wind
         self.wind_timer = 4.0   #intervals between gusts
         self.wind_active = False
         self.wind_streak_timer = 0
         self.all_wind_streaks = pg.sprite.Group()
+        self.all_meteors = pg.sprite.Group()
+        self.meteor_timer = 0
+        self.meteor_spawn_interval = random.uniform(3.0, 7.0)
 
         #interactable spawn interval for petals, will change eventually for each level
         self.petal_spawn_interval = 0.3
@@ -192,7 +200,14 @@ class Game:
         self.all_dash_trails.update()
         self.all_jumppetals.update()  
         self.all_wind_streaks.update()
-   
+        self.all_meteors.update()
+
+        #meteor spawning
+        self.meteor_timer += self.dt
+        if self.meteor_timer >= self.meteor_spawn_interval:
+            self.meteor_timer = 0
+            self.meteor_spawn_interval = random.uniform(2.0, 6.0)
+            Meteor(self)
         # checks if the player reached the portal
         portal_hits = pg.sprite.spritecollide(self.player, self.all_portals, False)
         #boolean value determines if player moves onto next level
@@ -204,7 +219,7 @@ class Game:
                 # when gust is over enter calm period between 3-8s
                 self.wind_active = False
                 self.wind_force = 0
-                self.wind_timer = random.uniform(3.0, 8.0)
+                self.wind_timer = random.uniform(3.0, 6.0)
             else:
                 # start a new gust with random strength
                 self.wind_active = True
@@ -232,6 +247,8 @@ class Game:
         self.screen.blit(self.background_img, (0, 0)) 
         self.all_grounds.draw(self.screen)
         self.all_petals.draw(self.screen)   # petals behind player/walls
+        self.all_meteors.draw(self.screen)      # meteors behind petals/player
+
         self.all_sprites.draw(self.screen) # player/walls drawn on top
         #self.draw_text("Petals in the Wind", 30, BGPINK, WIDTH/2, TILESIZE^2)
         #self.draw_text(str(self.dt), 24, WHITE, WIDTH/2, HEIGHT/4)
@@ -239,7 +256,6 @@ class Game:
         self.all_dash_trails.draw(self.screen)  # trail behind player
         self.all_jumppetals.draw(self.screen)
         self.all_wind_streaks.draw(self.screen)  # wind behind petals/player
-
         #self.draw_text(str(self.player.pos), 24, WHITE, WIDTH/2, HEIGHT-TILESIZE*3)
         pg.display.flip()
     #draws the text
