@@ -325,13 +325,19 @@ class Mob(Sprite):
 
 #adding a wall sprite (need to fix collisions)
 class Wall(Sprite):
-    def __init__(self, game, x, y):
+    def __init__(self, game, x, y, layer = 'mid'):
         self.groups = game.all_sprites, game.all_walls
         Sprite.__init__(self, self.groups)
         self.game = game
         self.image = game.wall_img
         #self.image = pg.Surface((TILESIZE, TILESIZE))
         #self.image.fill(GREEN)
+        if layer == 'top':
+            self.image = game.cloud_top_img
+        elif layer == 'bot':
+            self.image = game.cloud_bot_img
+        else:
+            self.image = game.cloud_mid_img
         self.rect = self.image.get_rect()
         self.vel = vec(0,0) 
         self.pos = vec(x,y) * TILESIZE

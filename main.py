@@ -27,6 +27,38 @@ class Game:
         #print('game instantiated...')
     # a method is a function tied to a Class
     #loads the data (images)
+    #sourced from Claude
+    #how do i make it so when the map loads it knows layers
+    
+    def get_wall_layer_map(self):
+        wall_rows = set()
+        for row, line in enumerate(self.map.data):
+            i = 0
+            while i < len(line):
+                if i + 1 < len(line) and line[i + 1] == '(':
+                    end = line.find(')', i)
+                    tile = line[i:end + 1] if end != -1 else line[i]
+                    i = end + 1 if end != -1 else i + 1
+                else:
+                    tile = line[i]
+                    i += 1
+                if tile == '1':
+                    wall_rows.add(row)
+                    break  # one confirmed hit per row is enough
+        wall_rows = sorted(wall_rows)
+        if not wall_rows:
+            return {}
+        total = len(wall_rows)
+        third = max(1, total // 3)
+        layer_map = {}
+        for i, r in enumerate(wall_rows):
+            if i < third:
+                layer_map[r] = 'top'
+            elif i >= total - third:
+                layer_map[r] = 'bot'
+            else:
+                layer_map[r] = 'mid'
+        return layer_map
     def load_data(self, map):
         self.game_dir = path.dirname(__file__)
         self.img_dir = path.join(self.game_dir, 'images')
@@ -39,6 +71,15 @@ class Game:
         self.map = Map(path.join(self.game_dir, map))
         self.portal = pg.image.load(path.join(self.img_dir, 'portal.png')).convert_alpha()  
         self.WindStreak = pg.image.load(path.join(self.img_dir,'wind.png')).convert_alpha()
+        self.cloud_top_img = pg.transform.scale(
+            pg.image.load(path.join(self.img_dir, 'cloud_top.png')).convert_alpha(),
+            (TILESIZE, TILESIZE))
+        self.cloud_mid_img = pg.transform.scale(
+            pg.image.load(path.join(self.img_dir, 'cloud_middle.png')).convert_alpha(),
+            (TILESIZE, TILESIZE))
+        self.cloud_bot_img = pg.transform.scale(
+            pg.image.load(path.join(self.img_dir, 'cloud_bottom.png')).convert_alpha(),
+            (TILESIZE, TILESIZE))
         bg_filename = LEVEL_BACKGROUNDS.get(map, 'background.png')
         self.background_img = pg.transform.scale(
         pg.image.load(path.join(self.img_dir, bg_filename)).convert(),
@@ -69,6 +110,8 @@ class Game:
         for sprite in self.all_moving_platforms:
             sprite.kill()
         for sprite in self.all_meteors:
+            sprite.kill()
+        for sprite in self.all_wind_streaks:
             sprite.kill()
         # Load next map
         self.load_data(self.levels[self.current_level_index])
@@ -133,6 +176,8 @@ class Game:
         #interactable spawn interval for petals, will change eventually for each level
         self.petal_spawn_interval = 0.3
         self.load_data(self.levels[self.current_level_index])
+        wall_layers = self.get_wall_layer_map()
+
 #looks through each line in map to add the sprite
         for row, line in enumerate(self.map.data):
             col = 0
