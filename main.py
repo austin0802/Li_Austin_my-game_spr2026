@@ -29,7 +29,6 @@ class Game:
     #loads the data (images)
     #sourced from Claude
     #how do i make it so when the map loads it knows layers
-    
     def get_wall_layer_map(self):
         wall_rows = set()
         for row, line in enumerate(self.map.data):
@@ -59,6 +58,7 @@ class Game:
             else:
                 layer_map[r] = 'mid'
         return layer_map
+
     def load_data(self, map):
         self.game_dir = path.dirname(__file__)
         self.img_dir = path.join(self.game_dir, 'images')
@@ -89,63 +89,7 @@ class Game:
         (WIDTH, HEIGHT))
     #adds all the sprites 
     #next level
-    def next_level(self):
-        self.current_level_index += 1
-        if self.current_level_index >= len(self.levels):
-            print("You win!")
-            self.running = False
-            return
-
-        # Kill all sprites
-        for sprite in self.all_sprites:
-            sprite.kill()
-        for sprite in self.all_grounds:
-            sprite.kill()
-        for sprite in self.all_petals:
-            sprite.kill()
-        for sprite in self.all_jumppetals:
-            sprite.kill()
-        for sprite in self.all_dash_trails:
-            sprite.kill()
-        for sprite in self.all_moving_platforms:
-            sprite.kill()
-        for sprite in self.all_meteors:
-            sprite.kill()
-        for sprite in self.all_wind_streaks:
-            sprite.kill()
-        # Load next map
-        self.load_data(self.levels[self.current_level_index])
-        # Rebuild sprite groups (they still exist, just emptied)
-        for row, line in enumerate(self.map.data):
-            col = 0
-            i = 0
-            while i < len(line):
-                if i + 1 < len(line) and line[i+1] == '(':
-                    end = line.find(')', i)
-                    tile = line[i:end+1]
-                    i = end + 1 
-                else:
-                    tile = line[i]
-                    i += 1
-                if tile == ' ':
-                    continue
-                if tile == '1':
-                    Wall(self, col, row)
-                if tile.startswith('P'):
-                    self.player = Player(self, col, row)
-                    self.spawn_pos = pg.math.Vector2(col, row) * TILESIZE 
-#stores the spawn position value
-                if tile.startswith('M'):
-                    Mob(self, col, row)
-                if tile.startswith('O'):
-                    Orb(self, col, row)
-                if tile.startswith('A'):
-                    Portal(self, col, row)   #the new Portal sprite
-                if tile.startswith('F'):
-                    MovingPlatform(self, col, row)           
-                if tile.startswith('J'):
-                    MovingPlatform(self, col, row, axis='y') 
-                col += 1
+   
             
 
     def new(self):
@@ -172,10 +116,10 @@ class Game:
         self.all_meteors = pg.sprite.Group()
         self.meteor_timer = 0
         self.meteor_spawn_interval = random.uniform(3.0, 7.0)
-
         #interactable spawn interval for petals, will change eventually for each level
         self.petal_spawn_interval = 0.3
         self.load_data(self.levels[self.current_level_index])
+
         wall_layers = self.get_wall_layer_map()
 
 #looks through each line in map to add the sprite
@@ -195,7 +139,7 @@ class Game:
                 if tile.startswith('G'):
                     ground(self, col, row, tile)
                 if tile == '1':
-                    Wall(self, col, row)
+                    Wall(self, col, row, layer=wall_layers.get(row, 'mid'))
                 if tile.startswith('P'):
                     self.player = Player(self, col, row)
                     self.spawn_pos = pg.math.Vector2(col, row) * TILESIZE
@@ -214,6 +158,65 @@ class Game:
         pg.mixer.music.load(path.join(self.snd_dir, "soundtrack1.mp3"))
         pg.mixer.music.play(loops=-1)
         self.run()
+    def next_level(self):
+        self.current_level_index += 1
+        if self.current_level_index >= len(self.levels):
+            print("You win!")
+            self.running = False
+            return
+
+        # Kill all sprites
+        for sprite in self.all_sprites:
+            sprite.kill()
+        for sprite in self.all_grounds:
+            sprite.kill()
+        for sprite in self.all_petals:
+            sprite.kill()
+        for sprite in self.all_jumppetals:
+            sprite.kill()
+        for sprite in self.all_dash_trails:
+            sprite.kill()
+        for sprite in self.all_moving_platforms:
+            sprite.kill()
+        for sprite in self.all_meteors:
+            sprite.kill()
+        for sprite in self.all_wind_streaks:
+            sprite.kill()
+        # Load next map
+        self.load_data(self.levels[self.current_level_index])
+        wall_layers = self.get_wall_layer_map()
+
+        # Rebuild sprite groups (they still exist, just emptied)
+        for row, line in enumerate(self.map.data):
+            col = 0
+            i = 0
+            while i < len(line):
+                if i + 1 < len(line) and line[i+1] == '(':
+                    end = line.find(')', i)
+                    tile = line[i:end+1]
+                    i = end + 1 
+                else:
+                    tile = line[i]
+                    i += 1
+                if tile == ' ':
+                    continue
+                if tile == '1':
+                        Wall(self, col, row, layer=wall_layers.get(row, 'mid'))
+                if tile.startswith('P'):
+                    self.player = Player(self, col, row)
+                    self.spawn_pos = pg.math.Vector2(col, row) * TILESIZE 
+#stores the spawn position value
+                if tile.startswith('M'):
+                    Mob(self, col, row)
+                if tile.startswith('O'):
+                    Orb(self, col, row)
+                if tile.startswith('A'):
+                    Portal(self, col, row)   #the new Portal sprite
+                if tile.startswith('F'):
+                    MovingPlatform(self, col, row)           
+                if tile.startswith('J'):
+                    MovingPlatform(self, col, row, axis='y') 
+                col += 1
     #respawns player once they fall below certain y pos
     def respawn(self):
         self.player.pos = self.spawn_pos.copy()
