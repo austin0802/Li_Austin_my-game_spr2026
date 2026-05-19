@@ -19,7 +19,11 @@ LEVEL_BACKGROUNDS = {
     'level1.txt': 'background1.png',
     'level2.txt': 'background2.png',
     'level3.txt': 'background3.png',
-    'level4.txt': 'background4.png'
+    'level4.txt': 'background4.png',
+    'level5.txt': 'background1.png',
+    'level6.txt': 'background2.png',
+    'level7.txt': 'background3.png',
+    'level8.txt': 'background4.png',
 }
 # tuple storing RGB values
 BLUE = (0,0,255)
