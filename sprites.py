@@ -79,9 +79,9 @@ class Player(Sprite):
         self.trail_timer = 0
         self.moving = False
         self.current_frame = 0
-        #self.state_machine = StateMachine()
-        #self.states: Array[State] = [PlayerIdleState(self), PlayerMoveState(self)]
-        #self.state_machine.start_machine(self.states)
+        #will comment out, this is just for skipping levels 
+        self.skip_key_held = False
+
     #defines the jump function by changing y velocity to jumping force if player is on ground
     def jump(self):
         #if player is on ground, then set vel y to jump force and change on ground
@@ -141,6 +141,10 @@ class Player(Sprite):
                 #Calls dash function
                 self.dash()
                 self.dash_key_held = True
+        if keys[pg.K_n]:
+            if not self.skip_key_held:
+                self.game.next_level()
+                self.skip_key_held = True
         else:
             self.dash_key_held = False
 
@@ -612,116 +616,14 @@ class WindStreak(Sprite):
             self.kill()
             
 # Meteor class: spawns at the top of the screen and travels diagonally toward the southwest corner
-class Meteor(Sprite):
-    def __init__(self, game):
-        self.groups = game.all_sprites, game.all_meteors
-        Sprite.__init__(self, self.groups)
-        self.game = game
-
-        # Build a simple fiery meteor surface (orange circle with a bright core)
-        size = TILESIZE * 2
-        self.original_image = pg.Surface((size, size), pg.SRCALPHA)
-        # Outer glow
-        pg.draw.circle(self.original_image, (200, 80, 10, 180), (size // 2, size // 2), size // 2)
-        # Inner bright core
-        pg.draw.circle(self.original_image, (255, 220, 80, 230), (size // 2, size // 2), size // 4)
-        self.image = self.original_image.copy()
-        self.rect = self.image.get_rect()
-
-        # Spawn at a random x along the top edge of the screen
-        spawn_x = random.randint(0, WIDTH)
-        self.pos = vec(spawn_x, -size)
-        self.rect.center = self.pos
-
-        # Diagonal velocity: always heads toward the southwest corner (0, HEIGHT)
-        # Direction vector from spawn point to bottom-left corner
-        target = vec(0, HEIGHT)
-        direction = target - self.pos
-        if direction.length() != 0:
-            direction = direction.normalize()
-
-        # Randomise speed a bit so not every meteor looks identical
-        speed = random.uniform(300, 500)
-        self.vel = direction * speed
-
-        # Rotation for a tumbling effect
-        self.angle = random.uniform(0, 360)
-        self.spin_speed = random.uniform(80, 200)  # degrees per second
-
-    def update(self):
-        dt = self.game.dt
-
-        # Move along the diagonal
-        self.pos += self.vel * dt
-
-        # Spin
-        self.angle += self.spin_speed * dt
-        self.image = pg.transform.rotate(self.original_image, self.angle)
-        self.rect = self.image.get_rect(center=self.pos)
-
-        # Destroy once it leaves the bottom or left edge of the screen
-        if self.pos.y > HEIGHT + self.rect.height or self.pos.x < -self.rect.width:
-            self.kill()# Meteor class: spawns at the top of the screen and travels diagonally toward the southwest corner
-class Meteor(Sprite):
-    def __init__(self, game):
-        self.groups = game.all_sprites, game.all_meteors
-        Sprite.__init__(self, self.groups)
-        self.game = game
-
-        # Build a simple fiery meteor surface (orange circle with a bright core)
-        size = TILESIZE * 2
-        self.original_image = pg.Surface((size, size), pg.SRCALPHA)
-        # Outer glow
-        pg.draw.circle(self.original_image, (200, 80, 10, 180), (size // 2, size // 2), size // 2)
-        # Inner bright core
-        pg.draw.circle(self.original_image, (255, 220, 80, 230), (size // 2, size // 2), size // 4)
-        self.image = self.original_image.copy()
-        self.rect = self.image.get_rect()
-
-        # Spawn at a random x along the top edge of the screen
-        spawn_x = random.randint(0, WIDTH)
-        self.pos = vec(spawn_x, -size)
-        self.rect.center = self.pos
-
-        # Diagonal velocity: always heads toward the southwest corner (0, HEIGHT)
-        # Direction vector from spawn point to bottom-left corner
-        target = vec(0, HEIGHT)
-        direction = target - self.pos
-        if direction.length() != 0:
-            direction = direction.normalize()
-
-        # Randomise speed a bit so not every meteor looks identical
-        speed = random.uniform(300, 500)
-        self.vel = direction * speed
-
-        # Rotation for a tumbling effect
-        self.angle = random.uniform(0, 360)
-        self.spin_speed = random.uniform(80, 200)  # degrees per second
-
-    def update(self):
-        dt = self.game.dt
-
-        # Move along the diagonal
-        self.pos += self.vel * dt
-
-        # Spin
-        self.angle += self.spin_speed * dt
-        self.image = pg.transform.rotate(self.original_image, self.angle)
-        self.rect = self.image.get_rect(center=self.pos)
-
-        # Destroy once it leaves the bottom or left edge of the screen
-        if self.pos.y > HEIGHT + self.rect.height or self.pos.x < -self.rect.width:
-            self.kill()
             
 class Meteor(Sprite):
     def __init__(self, game):
         self.groups = game.all_sprites, game.all_meteors
         Sprite.__init__(self, self.groups)
         self.game = game
-
         # build a simple meteor
         raw_image = pg.image.load(path.join(game.img_dir, 'meteor.png')).convert_alpha()
-
         scale = 0.04  # adjust this 
         new_size = int(raw_image.get_width() * scale), int(raw_image.get_height() * scale)
 

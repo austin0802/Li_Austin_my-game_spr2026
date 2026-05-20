@@ -31,6 +31,7 @@ class Game:
     #how do i make it so when the map loads it knows layers
     def get_wall_layer_map(self):
         wall_rows = set()
+        #goes through each row in the maps
         for row, line in enumerate(self.map.data):
             i = 0
             while i < len(line):
@@ -47,6 +48,7 @@ class Game:
         wall_rows = sorted(wall_rows)
         if not wall_rows:
             return {}
+        #checks for the rows
         total = len(wall_rows)
         third = max(1, total // 3)
         layer_map = {}
@@ -58,7 +60,7 @@ class Game:
             else:
                 layer_map[r] = 'mid'
         return layer_map
-
+#loads all the images for the game
     def load_data(self, map):
         self.game_dir = path.dirname(__file__)
         self.img_dir = path.join(self.game_dir, 'images')
@@ -87,16 +89,12 @@ class Game:
         self.meteor_img = pg.transform.scale(
         pg.image.load(path.join(self.img_dir,'meteor.png')).convert(),
         (WIDTH, HEIGHT))
-    #adds all the sprites 
-    #next level
-   
-            
-
+#creates the new game
     def new(self):
         #inits all sprites
         self.current_level_index = 0        
-        #adding more levels, but for now keep these levels
-        self.levels = ['level1.txt', 'level2.txt','level3.txt','level4.txt']
+        #everything that is used in the game
+        self.levels = ['level1.txt', 'level2.txt','level3.txt','level4.txt','level5.txt','level6.txt','level7.txt','level8.txt']
         self.all_sprites = pg.sprite.Group()
         self.all_walls = pg.sprite.Group()      
         self.all_mobs = pg.sprite.Group()       
@@ -119,13 +117,14 @@ class Game:
         #interactable spawn interval for petals, will change eventually for each level
         self.petal_spawn_interval = 0.3
         self.load_data(self.levels[self.current_level_index])
-
+        #calls on the wall layers
         wall_layers = self.get_wall_layer_map()
 
 #looks through each line in map to add the sprite
         for row, line in enumerate(self.map.data):
             col = 0
             i = 0
+            #adds the different textures used (ground and coin not used)
             while i < len(line):
                 if i + 1 < len(line) and line[i+1] == '(':
                     end = line.find(')', i)
@@ -158,14 +157,16 @@ class Game:
         pg.mixer.music.load(path.join(self.snd_dir, "soundtrack1.mp3"))
         pg.mixer.music.play(loops=-1)
         self.run()
+    #next level functoin
     def next_level(self):
         self.current_level_index += 1
+        #if you reach last level, sets self.won to true for endscreen
         if self.current_level_index >= len(self.levels):
-            print("You win!")
+            self.won = True
             self.running = False
             return
 
-        # Kill all sprites
+        # kill all sprites to prevent same sprites from last level
         for sprite in self.all_sprites:
             sprite.kill()
         for sprite in self.all_grounds:
@@ -185,8 +186,7 @@ class Game:
         # Load next map
         self.load_data(self.levels[self.current_level_index])
         wall_layers = self.get_wall_layer_map()
-
-        # Rebuild sprite groups (they still exist, just emptied)
+        # rebuild sprite groups
         for row, line in enumerate(self.map.data):
             col = 0
             i = 0
@@ -222,7 +222,7 @@ class Game:
         self.player.pos = self.spawn_pos.copy()
         self.player.vel = pg.math.Vector2(0, 0)
         self.player.on_ground = False
-    #defines how to run
+    #run function
     def run(self):
         while self.running:
             self.dt = self.clock.tick(FPS) / 1000
@@ -242,6 +242,7 @@ class Game:
                     self.player.jump()  # call jump once on keypress
     def quit(self):
         pass
+    #updates all the sprites
     def update(self):
         self.all_sprites.update()
         self.all_petals.update()
@@ -252,6 +253,7 @@ class Game:
 
         #meteor spawning
         self.meteor_timer += self.dt
+        #random meteor spawning interval
         if self.meteor_timer >= self.meteor_spawn_interval:
             self.meteor_timer = 0
             self.meteor_spawn_interval = random.uniform(2.0, 6.0)
@@ -296,7 +298,6 @@ class Game:
         self.all_grounds.draw(self.screen)
         self.all_petals.draw(self.screen)   # petals behind player/walls
         self.all_meteors.draw(self.screen)      # meteors behind petals/player
-
         self.all_sprites.draw(self.screen) # player/walls drawn on top
         #self.draw_text("Petals in the Wind", 30, BGPINK, WIDTH/2, TILESIZE^2)
         #self.draw_text(str(self.dt), 24, WHITE, WIDTH/2, HEIGHT/4)
@@ -314,12 +315,178 @@ class Game:
         text_rect = text_surface.get_rect()
         text_rect.midtop = (x,y)
         self.screen.blit(text_surface, text_rect)
-    
+    #asked claude to help generate a title screen and an endscreen
+    def show_title_screen(self):
+        # different petals for the start screen
+        import math
+        petals = []
+        petal_img = None
+        try:
+            img_dir = path.join(path.dirname(__file__), 'images')
+            petal_img = pg.image.load(path.join(img_dir, 'petalimage.png')).convert_alpha()
+        except Exception:
+            pass
+#keeps the petal mechanics for the aesthetics
+        for _ in range(30):
+            petals.append({
+                'x': random.uniform(0, WIDTH),
+                'y': random.uniform(-HEIGHT, 0),
+                'speed': random.uniform(60, 130),
+                'drift': random.uniform(-40, 40),
+                'wobble_offset': random.uniform(0, math.pi * 2),
+                'wobble_speed': random.uniform(1.5, 3.0),
+                'wobble_amp': random.uniform(20, 50),
+                'angle': random.uniform(0, 360),
+                'spin': random.uniform(-60, 60),
+            })
+#checks for player input starting the game
+        clock = pg.time.Clock()
+        waiting = True
+        while waiting and self.running:
+            dt = clock.tick(FPS) / 1000
+            t = pg.time.get_ticks() / 1000
+
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    self.running = False
+                    waiting = False
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_RETURN or event.key == pg.K_SPACE:
+                        waiting = False
+                    if event.key == pg.K_ESCAPE:
+                        self.running = False
+                        waiting = False
+
+            # draw gradient background
+            for y in range(HEIGHT):
+                ratio = y / HEIGHT
+                r = int(20 + ratio * (255 - 20))
+                g_col = int(10 + ratio * (153 - 10))
+                b = int(60 + ratio * (253 - 60))
+                pg.draw.line(self.screen, (r, g_col, b), (0, y), (WIDTH, y))
+
+            # update and draw petals
+            for p in petals:
+                p['y'] += p['speed'] * dt
+                wobble = math.sin(t * p['wobble_speed'] + p['wobble_offset']) * p['wobble_amp']
+                p['x'] += (p['drift'] + wobble) * dt
+                p['angle'] += p['spin'] * dt
+                if p['y'] > HEIGHT + 20:
+                    p['y'] = random.uniform(-60, 0)
+                    p['x'] = random.uniform(0, WIDTH)
+                if petal_img:
+                    rotated = pg.transform.rotate(petal_img, p['angle'])
+                    self.screen.blit(rotated, rotated.get_rect(center=(int(p['x']), int(p['y']))))
+
+            # title
+            font = pg.font.Font(pg.font.match_font('Comfortaa'), 72)
+            surf = font.render("Petals in the Wind", True, BGPINK)
+            self.screen.blit(surf, surf.get_rect(center=(WIDTH // 2, HEIGHT // 4)))
+
+            # subtle shadow
+            font_name = pg.font.match_font('Comfortaa')
+            shadow_font = pg.font.Font(font_name, 72)
+            shadow_surf = shadow_font.render("Petals in the Wind", True, (0, 0, 0))
+            shadow_surf.set_alpha(80)
+            self.screen.blit(shadow_surf, shadow_surf.get_rect(center=(WIDTH // 2 + 3, HEIGHT // 4 + 3)))
+
+            # pulsing prompt
+            alpha = int(180 + 75 * math.sin(t * 3))
+            prompt_surf = pg.font.Font(font_name, 28).render("PRESS  SPACE  TO  PLAY", True, WHITE)
+            prompt_surf.set_alpha(alpha)
+            self.screen.blit(prompt_surf, prompt_surf.get_rect(center=(WIDTH // 2, HEIGHT * 3 // 4)))
+
+            pg.display.flip()
+#adds the endscreen
+    def show_end_screen(self):
+        import math
+        petals = []
+        petal_img = None
+        try:
+            img_dir = path.join(path.dirname(__file__), 'images')
+            petal_img = pg.image.load(path.join(img_dir, 'petalimage.png')).convert_alpha()
+        except Exception:
+            pass
+#slightly different petals in end screen, lots of petals for more of a celebration theme
+        for _ in range(40):
+            petals.append({
+                'x': random.uniform(0, WIDTH),
+                'y': random.uniform(-HEIGHT, 0),
+                'speed': random.uniform(40, 100),
+                'drift': random.uniform(-60, 60),
+                'wobble_offset': random.uniform(0, math.pi * 2),
+                'wobble_speed': random.uniform(1.0, 2.5),
+                'wobble_amp': random.uniform(30, 70),
+                'angle': random.uniform(0, 360),
+                'spin': random.uniform(-90, 90),
+            })
+
+        clock = pg.time.Clock()
+        waiting = True
+        while waiting and self.running:
+            dt = clock.tick(FPS) / 1000
+            t = pg.time.get_ticks() / 1000
+
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    self.running = False
+                    waiting = False
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_RETURN or event.key == pg.K_SPACE:
+                        waiting = False  # restart
+                    if event.key == pg.K_ESCAPE:
+                        self.running = False
+                        waiting = False
+
+            # golden gradient background
+            for y in range(HEIGHT):
+                ratio = y / HEIGHT
+                r = int(255)
+                g_col = int(180 - ratio * 100)
+                b = int(80 - ratio * 60)
+                pg.draw.line(self.screen, (r, g_col, max(b, 0)), (0, y), (WIDTH, y))
+
+            # lots of petals for the celebration
+            for p in petals:
+                p['y'] += p['speed'] * dt
+                wobble = math.sin(t * p['wobble_speed'] + p['wobble_offset']) * p['wobble_amp']
+                p['x'] += (p['drift'] + wobble) * dt
+                p['angle'] += p['spin'] * dt
+                if p['y'] > HEIGHT + 20:
+                    p['y'] = random.uniform(-80, 0)
+                    p['x'] = random.uniform(0, WIDTH)
+                if petal_img:
+                    rotated = pg.transform.rotate(petal_img, p['angle'])
+                    self.screen.blit(rotated, rotated.get_rect(center=(int(p['x']), int(p['y']))))
+
+            font = pg.font.Font(pg.font.match_font('Comfortaa'), 72)
+            surf = font.render("Petals in the Wind", True, BLACK)
+            self.screen.blit(surf, surf.get_rect(center=(WIDTH // 2, HEIGHT // 4)))
+            alpha = int(180 + 75 * math.sin(t * 3))
+            font_name = pg.font.match_font('Comfortaa')
+            replay_surf = pg.font.Font(font_name, 26).render("SPACE  to play again      ESC  to quit", True, WHITE)
+            replay_surf.set_alpha(alpha)
+            self.screen.blit(replay_surf, replay_surf.get_rect(center=(WIDTH // 2, HEIGHT * 3 // 4)))
+
+            pg.display.flip()
+
+        # if space was pressed, reset running so the outer loop calls g.new() again
+        if self.running:
+            self.running = True
+
 #calls Game
 if __name__ == "__main__":
     g = Game()
+    g.show_title_screen()
 #runs game
 while g.running:
+    g.won = False
+    g.running = True
     g.new()
+    # new() returns when running becomes False (win or quit)
+    if g.won:
+        g.running = True   # keep alive so end screen can run
+        g.show_end_screen()
+        # after end screen: if player pressed space, loop back; if ESC, running=False → exit
 #closes game
 pg.quit()
